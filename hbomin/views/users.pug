@@ -1,0 +1,10 @@
+extends layout
+
+block content
+  h1 User Data
+  if results && results.length > 0 && results[0].length > 0
+    ul
+      each row in results[0]
+        li= row.username
+  else
+    p No users found.

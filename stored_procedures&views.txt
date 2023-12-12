@@ -1,0 +1,114 @@
+CREATE PROCEDURE create_account(
+  IN user_first_name VARCHAR(255),
+  IN user_last_name VARCHAR(255),
+  IN user_email VARCHAR(255),
+  IN user_password VARCHAR(255),
+  IN user_payment_method VARCHAR(50),
+  IN user_subscription_id INT(11),
+  IN user_profile_name VARCHAR(255),
+  IN user_profile_image VARCHAR(255),
+  IN user_profile_age INT(11),
+  IN user_language_id INT(11),
+  IN user_view_movies TINYINT(1),
+  IN user_view_series TINYINT(1),
+  IN user_min_age INT(11)
+)
+BEGIN
+  DECLARE new_account_id INT;
+  INSERT INTO account (first_name, last_name, email, password, payment_method, blocked_end_time, email_validated) VALUES (user_first_name, user_last_name, user_email, user_password, user_payment_method, MAKEDATE(1970,365), false);
+  SET new_account_id = LAST_INSERT_ID();
+  CALL change_subscription(new_account_id, user_subscription_id);
+  CALL create_profile(new_account_id, user_profile_name, user_profile_image, user_profile_age, user_language_id, user_view_movies, user_view_series, user_min_age);
+END;
+
+CREATE PROCEDURE create_profile(
+  IN user_account_id INT(11),
+  IN user_profile_name VARCHAR(255),
+  IN user_profile_image VARCHAR(255),
+  IN user_profile_age INT(11),
+  IN user_language_id INT(11),
+  IN user_view_movies TINYINT(1),
+  IN user_view_series TINYINT(1),
+  IN user_min_age INT(11)
+)
+BEGIN
+  INSERT INTO preference (view_movies, view_series, min_age) VALUES (user_view_movies, user_view_series, user_min_age);
+  INSERT INTO profile (account_id, profile_name, profile_image, profile_age, language_id, preference_id) VALUES (user_account_id, user_profile_name, user_profile_image, user_profile_age, user_language_id, LAST_INSERT_ID());
+END;
+
+CREATE VIEW account_email_password_view AS SELECT email, password FROM account;
+
+CREATE INDEX idx_email ON account(email);
+
+CREATE PROCEDURE get_login_data(
+  IN user_email VARCHAR(255)
+)
+BEGIN
+  SELECT account_id, email, password FROM account_email_password_view WHERE email = user_email LIMIT 1;
+END;
+
+CREATE PROCEDURE update_login_data(
+  IN user_email VARCHAR(255),
+  IN user_password VARCHAR(255)
+)
+BEGIN
+  UPDATE account SET password = user_password WHERE email = user_email;
+END;
+
+CREATE PROCEDURE validate_email(
+  IN user_email VARCHAR(255)
+)
+BEGIN
+  UPDATE account SET email_validated = true WHERE email = user_email;
+END;
+
+CREATE PROCEDURE update_profile(
+  IN user_account_id INT(11),
+  IN user_profile_name VARCHAR(255),
+  IN user_profile_image VARCHAR(255),
+  IN user_profile_age INT(11),
+  IN update_name BOOLEAN,
+  IN update_image BOOLEAN,
+  IN update_age BOOLEAN
+)
+BEGIN
+  DECLARE update_query VARCHAR(1000);
+
+  SET update_query = 'UPDATE profile SET ';
+
+  IF update_name THEN
+    SET update_query = CONCAT(update_query, 'profile_name = "', user_profile_name, '"');
+  END IF;
+
+  IF update_name AND (update_image OR update_age) THEN
+    SET update_query = CONCAT(update_query, ', ');
+  END IF;
+
+  IF update_image THEN
+    SET update_query = CONCAT(update_query, 'profile_image = "', user_profile_image, '"');
+  END IF;
+
+  IF (update_name OR update_image) AND update_age THEN
+    SET update_query = CONCAT(update_query, ', ');
+  END IF;
+
+  IF update_age THEN
+    SET update_query = CONCAT(update_query, 'profile_age = ', user_profile_age);
+  END IF;
+
+  SET update_query = CONCAT(update_query, ' WHERE account_id = ', user_account_id);
+
+  PREPARE stmt FROM update_query;
+  EXECUTE stmt;
+  DEALLOCATE PREPARE stmt;
+END;
+
+CREATE PROCEDURE change_subscription(
+  IN user_account_id INT(11),
+  IN user_subscription_id INT(11)
+)
+BEGIN
+  INSERT INTO subscription_record (account_id, subscription_id, start_date) VALUES (user_account_id, user_subscription_id, NOW());
+END;
+
+CREATE VIEW subscription_definition_view AS SELECT definition_type.name FROM account INNER JOIN subscription ON subscription.definition_type = definition_type.definition_type_id;

@@ -111,4 +111,14 @@ BEGIN
   INSERT INTO subscription_record (account_id, subscription_id, start_date) VALUES (user_account_id, user_subscription_id, NOW());
 END;
 
-CREATE VIEW subscription_definition_view AS SELECT definition_type.name FROM account INNER JOIN subscription ON subscription.definition_type = definition_type.definition_type_id;
+CREATE VIEW subscription_definition_view AS SELECT subscription.subscription_id, definition_type.name FROM account INNER JOIN subscription ON subscription.definition_type = definition_type.definition_type_id;
+
+CREATE PROCEDURE get_subscription_definition(
+  IN user_subscription_id INT(11)
+)
+BEGIN
+  SELECT definition_type.name FROM subscription_definition_view WHERE subscription.subscription_id = user_subscription_id;
+END;
+
+CREATE VIEW movie_view AS SELECT movie.title, movie.duration, movie.description, definition_type.name FROM movie LEFT JOIN definition_type ON movie.definition_type = definition_type.definition_type_id;
+CREATE VIEW 

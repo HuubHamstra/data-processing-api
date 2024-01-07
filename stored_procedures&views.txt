@@ -14,11 +14,24 @@ CREATE PROCEDURE create_account(
   IN user_min_age INT(11)
 )
 BEGIN
+  START TRANSACTION;
+  DECLARE commit_insert BOOLEAN DEFAULT TRUE;
+
   DECLARE new_account_id INT;
   INSERT INTO account (first_name, last_name, email, password, payment_method, blocked_end_time, email_validated) VALUES (user_first_name, user_last_name, user_email, user_password, user_payment_method, MAKEDATE(1970,365), false);
   SET new_account_id = LAST_INSERT_ID();
   CALL change_subscription(new_account_id, user_subscription_id);
   CALL create_profile(new_account_id, user_profile_name, user_profile_image, user_profile_age, user_language_id, user_view_movies, user_view_series, user_min_age);
+  
+  IF ROW_COUNT() = 0 THEN
+    SET commit_insert = FALSE;
+  END IF;
+
+  IF commit_insert THEN
+    COMMIT;
+  ELSE
+    ROLLBACK;
+  END IF;
 END;
 
 CREATE PROCEDURE create_profile(
@@ -32,12 +45,24 @@ CREATE PROCEDURE create_profile(
   IN user_min_age INT(11)
 )
 BEGIN
+  START TRANSACTION;
+  DECLARE commit_insert BOOLEAN DEFAULT TRUE;
+
   INSERT INTO preference (view_movies, view_series, min_age) VALUES (user_view_movies, user_view_series, user_min_age);
   INSERT INTO profile (account_id, profile_name, profile_image, profile_age, language_id, preference_id) VALUES (user_account_id, user_profile_name, user_profile_image, user_profile_age, user_language_id, LAST_INSERT_ID());
+  
+  IF ROW_COUNT() = 0 THEN
+    SET commit_insert = FALSE;
+  END IF;
+
+  IF commit_insert THEN
+    COMMIT;
+  ELSE
+    ROLLBACK;
+  END IF;
 END;
 
 CREATE VIEW account_email_password_view AS SELECT email, password FROM account;
-
 CREATE INDEX idx_email ON account(email);
 
 CREATE PROCEDURE get_login_data(
@@ -52,14 +77,40 @@ CREATE PROCEDURE update_login_data(
   IN user_password VARCHAR(255)
 )
 BEGIN
+  START TRANSACTION;
+  DECLARE commit_update BOOLEAN DEFAULT TRUE;
+
   UPDATE account SET password = user_password WHERE email = user_email;
+  
+  IF ROW_COUNT() = 0 THEN
+    SET commit_update = FALSE;
+  END IF;
+
+  IF commit_update THEN
+    COMMIT;
+  ELSE
+    ROLLBACK;
+  END IF;
 END;
 
 CREATE PROCEDURE validate_email(
   IN user_email VARCHAR(255)
 )
 BEGIN
+  START TRANSACTION;
+  DECLARE commit_update BOOLEAN DEFAULT TRUE;
+
   UPDATE account SET email_validated = true WHERE email = user_email;
+  
+  IF ROW_COUNT() = 0 THEN
+    SET commit_update = FALSE;
+  END IF;
+
+  IF commit_update THEN
+    COMMIT;
+  ELSE
+    ROLLBACK;
+  END IF;
 END;
 
 CREATE PROCEDURE update_profile(
@@ -72,6 +123,9 @@ CREATE PROCEDURE update_profile(
   IN update_age BOOLEAN
 )
 BEGIN
+  START TRANSACTION;
+  DECLARE commit_update BOOLEAN DEFAULT TRUE;
+
   DECLARE update_query VARCHAR(1000);
 
   SET update_query = 'UPDATE profile SET ';
@@ -101,6 +155,16 @@ BEGIN
   PREPARE stmt FROM update_query;
   EXECUTE stmt;
   DEALLOCATE PREPARE stmt;
+  
+  IF ROW_COUNT() = 0 THEN
+    SET commit_update = FALSE;
+  END IF;
+
+  IF commit_update THEN
+    COMMIT;
+  ELSE
+    ROLLBACK;
+  END IF;
 END;
 
 CREATE PROCEDURE change_subscription(
@@ -108,7 +172,20 @@ CREATE PROCEDURE change_subscription(
   IN user_subscription_id INT(11)
 )
 BEGIN
+  START TRANSACTION;
+  DECLARE commit_insert BOOLEAN DEFAULT TRUE;
+
   INSERT INTO subscription_record (account_id, subscription_id, start_date) VALUES (user_account_id, user_subscription_id, NOW());
+  
+  IF ROW_COUNT() = 0 THEN
+    SET commit_insert = FALSE;
+  END IF;
+
+  IF commit_insert THEN
+    COMMIT;
+  ELSE
+    ROLLBACK;
+  END IF;
 END;
 
 CREATE VIEW subscription_definition_view AS SELECT subscription.subscription_id, definition_type.name FROM account INNER JOIN subscription ON subscription.definition_type = definition_type.definition_type_id;
@@ -120,5 +197,513 @@ BEGIN
   SELECT definition_type.name FROM subscription_definition_view WHERE subscription.subscription_id = user_subscription_id;
 END;
 
-CREATE VIEW movie_view AS SELECT movie.title, movie.duration, movie.description, definition_type.name FROM movie LEFT JOIN definition_type ON movie.definition_type = definition_type.definition_type_id;
-CREATE VIEW 
+CREATE VIEW movie_viewer_guide_view AS SELECT movie.movie_id, GROUP_CONCAT(viewer_guide.name ORDER BY viewer_guide.guide_id ASC) AS viewer_guides FROM movie JOIN movie_viewer_guide ON movie.movie_id = movie_viewer_guide.movie_id JOIN viewer_guide ON movie_viewer_guide.guide_id = viewer_guide.guide_id GROUP BY movie.movie_id;
+CREATE VIEW movie_view AS SELECT movie.movie_id, movie.title, movie.duration, movie.description, definition_type.name, genre.name, movie_viewer_guide_view.viewer_guides FROM movie LEFT JOIN definition_type ON movie.definition_type = definition_type.definition_type_id JOIN genre ON movie.genre_id = genre.genre_id JOIN movie_viewer_guide_view ON movie.movie_id = movie_viewer_guide_view.movie_id;
+
+CREATE PROCEDURE get_movies_available_with_definition(
+  IN user_definition_type INT(11), 
+  IN user_preference_id INT(11)
+)
+BEGIN
+  DECLARE viewer_guide_list VARCHAR(255);
+  SELECT GROUP_CONCAT(name ORDER BY guide_id ASC) INTO viewer_guide_list FROM viewer_guide WHERE guide_id IN (SELECT viewer_guide_id FROM preference_viewer_guide WHERE preference_id = user_preference_id);
+
+  CREATE TEMPORARY TABLE temp_result AS SELECT mv.movie_id, mv.title, mv.duration, mv.description, dt.name AS definition_type, gn.name AS genre, mvv.viewer_guides FROM movie_view mv LEFT JOIN definition_type dt ON mv.definition_type = dt.definition_type_id JOIN genre gn ON mv.genre_id = gn.genre_id LEFT JOIN movie_viewer_guide_view mvv ON mv.movie_id = mvv.movie_id;
+  DELETE FROM temp_result WHERE (user_definition_type IS NOT NULL AND temp_result.definition_type != user_definition_type) OR (viewer_guide_list IS NOT NULL AND FIND_IN_SET(temp_result.viewer_guides, viewer_guide_list) = 0);
+  SELECT * FROM temp_result;
+  DROP TEMPORARY TABLE IF EXISTS temp_result;
+END;
+
+CREATE PROCEDURE update_progress(
+  IN user_profile_id INT(11),
+  IN is_episode BOOLEAN,
+  IN progress_movie_id INT(11),
+  IN progress_episode_id INT(11),
+  IN progress_timestamp datetime
+  )
+BEGIN
+  START TRANSACTION;
+  DECLARE commit_update BOOLEAN DEFAULT TRUE;
+
+  UPDATE progress SET timestamp = progress_timestamp, watch_date = CURDATE(), watch_count = watch_count + 1 WHERE user_profile_id = profile_id AND (is_episode AND progress_episode_id = episode_id OR (NOT is_episode AND progress_movie_id = movie_id));
+
+  IF ROW_COUNT() = 0 THEN
+    SET commit_update = FALSE;
+  END IF;
+
+  IF commit_update THEN
+    COMMIT;
+  ELSE
+    ROLLBACK;
+  END IF;
+END;
+
+CREATE PROCEDURE add_to_watchlist(
+  IN user_profile_id INT(11),
+  IN is_episode BOOLEAN,
+  IN watch_id INT(11)
+)
+BEGIN
+  START TRANSACTION;
+  DECLARE commit_insert BOOLEAN DEFAULT TRUE;
+
+  IF is_episode THEN
+    INSERT INTO watchlist (profile_id, episode_id) VALUES (user_profile_id, watch_id);
+  ELSE
+    INSERT INTO watchlist (profile_id, movie_id) VALUES (user_profile_id, watch_id);
+  END IF
+  
+  IF ROW_COUNT() = 0 THEN
+    SET commit_insert = FALSE;
+  END IF;
+
+  IF commit_insert THEN
+    COMMIT;
+  ELSE
+    ROLLBACK;
+  END IF;
+END;
+
+CREATE PROCEDURE remove_from_watchlist(
+  IN user_profile_id INT(11),
+  IN is_episode BOOLEAN,
+  IN watch_id INT(11)
+)
+BEGIN
+  START TRANSACTION;
+  DECLARE commit_delete BOOLEAN DEFAULT TRUE;
+
+  IF is_episode THEN
+    DELETE FROM watchlist WHERE profile_id = user_profile_id AND episode_id = watch_id;
+  ELSE
+    DELETE FROM watchlist WHERE profile_id = user_profile_id AND movie_id = watch_id;
+  END IF
+
+  IF ROW_COUNT() = 0 THEN
+    SET commit_delete = FALSE;
+  END IF;
+
+  IF commit_delete THEN
+    COMMIT;
+  ELSE
+    ROLLBACK;
+  END IF;
+END;
+
+CREATE PROCEDURE get_subtitle_languages(
+  IN is_episode BOOLEAN,
+  IN watch_id INT(11)
+)
+BEGIN
+  IF is_episode THEN
+    SELECT subtitle.subtitle_location, languages.title FROM subtitle JOIN languages ON subtitle.language_id = languages.id WHERE subtitles.episode_id = watch_id;
+  ELSE
+    SELECT subtitle.subtitle_location, languages.title FROM subtitle JOIN languages ON subtitle.language_id = languages.id WHERE subtitles.movie_id = watch_id;
+  END IF
+END;
+
+CREATE VIEW movie_watch_count_view AS SELECT movie_id, SUM(watch_count) AS total_watch_count FROM progress WHERE movie_id != NULL GROUP BY movie_id;
+CREATE VIEW episode_watch_count_view AS SELECT episode_id, SUM(watch_count) AS total_watch_count FROM progress WHERE episode_id != NULL GROUP BY episode_id;
+
+CREATE PROCEDURE get_watch_count(
+  IN is_episode BOOLEAN,
+  IN watch_id INT(11)
+)
+BEGIN
+  IF is_episode THEN
+    SELECT total_watch_count FROM episode_watch_count_view WHERE episode_id = watch_id;
+  ELSE
+    SELECT total_watch_count FROM movie_watch_count_view WHERE movie_id = watch_id;
+  END IF
+END;
+
+CREATE ROLE junior WITH LOGIN;
+CREATE ROLE medior WITH LOGIN;
+CREATE ROLE senior WITH LOGIN;
+REVOKE ALL FROM junior, medior, senior;
+
+-- Sommigen worden gedaan door de app, maar betekent dit dat junior hier ook toestemming voor heeft? --
+GRANT EXECUTE ON PROCEDURE create_account TO junior, medior, senior;
+GRANT EXECUTE ON PROCEDURE create_profile TO junior, medior, senior;
+GRANT EXECUTE ON PROCEDURE get_login_data TO medior, senior;
+GRANT EXECUTE ON PROCEDURE update_login_data TO medior, senior;
+GRANT EXECUTE ON PROCEDURE validate_email TO junior, medior, senior;
+GRANT EXECUTE ON PROCEDURE update_profile TO junior, medior, senior;
+GRANT EXECUTE ON PROCEDURE change_subscription TO senior;
+GRANT EXECUTE ON PROCEDURE get_subscription_definition TO junior, medior, senior;
+GRANT EXECUTE ON PROCEDURE get_movies_available_with_definition TO junior, medior, senior;
+GRANT EXECUTE ON PROCEDURE update_progress TO medior, senior;
+GRANT EXECUTE ON PROCEDURE add_to_watchlist TO medior, senior;
+GRANT EXECUTE ON PROCEDURE remove_from_watchlist TO medior, senior;
+GRANT EXECUTE ON PROCEDURE get_subtitle_languages TO junior, medior, senior;
+GRANT EXECUTE ON PROCEDURE get_watch_count TO junior, medior, senior;
+
+GRANT SELECT ON account_email_password_view TO medior, senior;
+GRANT SELECT ON subscription_definition_view TO junior, medior, senior;
+GRANT SELECT ON movie_viewer_guide_view TO junior, medior, senior;
+GRANT SELECT ON movie_view TO junior, medior, senior;
+GRANT SELECT ON movie_watch_count_view TO junior, medior, senior;
+GRANT SELECT ON episode_watch_count_view TO junior, medior, senior;
+
+GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE account, definition_type, episode, episode_viewer_guide, genre, language, movie, movie_viewer_guide, preference, preference_genre, preference_viewer_guide, profile, progress, season, series, subscription, subscription_record, subtitle, viewer_guide, watchlist TO senior;
+
+CREATE PROCEDURE get_daily_income(
+  IN date_of DATE
+)
+BEGIN
+  SELECT SUM(subscription.subscription_price) FROM subscription JOIN subscription_record ON subscription.subscription_id = subscription_record.subscription_id WHERE subscription_record.start_date = date_of;
+END;
+GRANT EXECUTE ON PROCEDURE get_daily_income TO senior;
+
+CREATE VIEW account_junior_view AS SELECT account_id, blocked_end_time, email_validated FROM account;
+GRANT SELECT ON account_junior_view TO junior, medior, senior;
+
+CREATE VIEW account_medior_view AS SELECT account_id, blocked_end_time, first_name, last_name, email, email_validated FROM account;
+GRANT SELECT ON account_medior_view TO medior, senior;
+
+CREATE VIEW subscription_record_junior_view AS SELECT subscription_record_id, account_id FROM subscription_record;
+GRANT SELECT ON subscription_record_junior_view TO junior, medior, senior;
+
+CREATE VIEW subscription_record_medior_view AS SELECT subscription_record_id, account_id, start_date FROM subscription_record;
+GRANT SELECT ON subscription_record_medior_view TO medior, senior;
+
+CREATE VIEW subscription_junior_view AS SELECT * FROM subscription;
+GRANT SELECT ON subscription_junior_view TO junior, medior, senior;
+
+CREATE VIEW language_junior_view as SELECT * FROM language;
+GRANT SELECT ON language_junior_view TO junior, medior, senior;
+
+CREATE PROCEDURE update_language_title(
+  IN update_language_id INT(11),
+  IN new_title VARCHAR(100)
+)
+BEGIN
+  START TRANSACTION;
+  DECLARE commit_update BOOLEAN DEFAULT TRUE;
+
+  UPDATE language SET title = new_title WHERE language_id = update_language_id;
+  
+  IF ROW_COUNT() = 0 THEN
+    SET commit_update = FALSE;
+  END IF;
+
+  IF commit_update THEN
+    COMMIT;
+  ELSE
+    ROLLBACK;
+  END IF;
+END;
+GRANT EXECUTE ON PROCEDURE update_language_title TO medior, senior;
+
+CREATE VIEW profile_junior_view AS SELECT * FROM profile;
+GRANT SELECT ON profile_junior_view TO junior, medior, senior;
+
+CREATE PROCEDURE update_profile_medior(
+  IN update_profile_id INT(11),
+  IN user_profile_image VARCHAR(255),
+  IN user_profile_age INT(11),
+  IN update_profile_image BOOLEAN,
+  IN update_profile_age BOOLEAN
+)
+BEGIN
+  START TRANSACTION;
+  DECLARE commit_update BOOLEAN DEFAULT TRUE;
+
+  IF update_profile_image THEN
+    UPDATE profile SET profile_image = new_profile_image WHERE profile_id = update_profile_id;
+  END IF;
+
+  IF update_profile_age THEN
+    UPDATE profile SET profile_age = new_profile_age WHERE profile_id = update_profile_id;
+  END IF;
+  
+  IF ROW_COUNT() = 0 THEN
+    SET commit_update = FALSE;
+  END IF;
+
+  IF commit_update THEN
+    COMMIT;
+  ELSE
+    ROLLBACK;
+  END IF;
+END;
+GRANT EXECUTE ON PROCEDURE update_profile_medior TO medior, senior;
+
+CREATE VIEW preference_genre_view as SELECT * FROM preference_genre;
+GRANT SELECT ON preference_genre_view TO junior, medior, senior;
+
+CREATE VIEW preference_view as SELECT * FROM preference;
+GRANT SELECT ON preference_view TO junior, medior, senior;
+
+CREATE VIEW subtitle_view as SELECT * FROM subtitle;
+GRANT SELECT ON subtitle_view TO junior, medior, senior;
+
+CREATE VIEW movie_junior_view as SELECT * FROM movie;
+GRANT SELECT ON movie_junior_view TO junior, medior, senior;
+
+CREATE VIEW genre_view as SELECT * FROM genre;
+GRANT SELECT ON genre_view TO junior, medior, senior;
+
+CREATE VIEW preference_viewer_guide_view as SELECT * FROM preference_viewer_guide;
+GRANT SELECT ON preference_viewer_guide_view TO junior, medior, senior;
+
+CREATE VIEW progress_view as SELECT * FROM progress;
+GRANT SELECT ON progress_view TO junior, medior, senior;
+
+CREATE VIEW episode_view as SELECT * FROM episode;
+GRANT SELECT ON episode_view TO junior, medior, senior;
+
+CREATE VIEW episode_viewer_guide_view as SELECT * FROM episode_viewer_guide;
+GRANT SELECT ON episode_viewer_guide_view TO junior, medior, senior;
+
+CREATE VIEW viewer_guide_view as SELECT * FROM viewer_guide;
+GRANT SELECT ON viewer_guide_view TO junior, medior, senior;
+
+CREATE VIEW watchlist_view as SELECT * FROM watchlist;
+GRANT SELECT ON watchlist_view TO junior, medior, senior;
+
+CREATE VIEW definition_type_view as SELECT * FROM definition_type;
+GRANT SELECT ON definition_type_view TO junior, medior, senior;
+
+CREATE VIEW season_view as SELECT * FROM season;
+GRANT SELECT ON season_view TO junior, medior, senior;
+
+CREATE VIEW series_view as SELECT * FROM series;
+GRANT SELECT ON series_view TO junior, medior, senior;
+
+CREATE VIEW movie_viewer_guide_view as SELECT * FROM movie_viewer_guide;
+GRANT SELECT ON movie_viewer_guide_view TO junior, medior, senior;
+
+CREATE PROCEDURE update_preference_medior(
+  IN update_preference_id INT(11),
+  IN new_min_age INT(11)
+)
+BEGIN
+  START TRANSACTION;
+  DECLARE commit_update BOOLEAN DEFAULT TRUE;
+
+  UPDATE preference SET min_age = new_min_age WHERE preference_id = update_preference_id;
+  
+  IF ROW_COUNT() = 0 THEN
+    SET commit_update = FALSE;
+  END IF;
+
+  IF commit_update THEN
+    COMMIT;
+  ELSE
+    ROLLBACK;
+  END IF;
+END;
+GRANT EXECUTE ON PROCEDURE update_preference_medior TO medior, senior;
+
+CREATE PROCEDURE update_subtitle_medior(
+  IN update_subtitle_id INT(11),
+  IN new_subtitle_location VARCHAR(255)
+)
+BEGIN
+  START TRANSACTION;
+  DECLARE commit_update BOOLEAN DEFAULT TRUE;
+
+  UPDATE subtitle SET subtitle_location = new_subtitle_location WHERE subtitle_id = update_subtitle_id;
+  
+  IF ROW_COUNT() = 0 THEN
+    SET commit_update = FALSE;
+  END IF;
+
+  IF commit_update THEN
+    COMMIT;
+  ELSE
+    ROLLBACK;
+  END IF;
+END;
+GRANT EXECUTE ON PROCEDURE update_subtitle_medior TO medior, senior;
+
+CREATE PROCEDURE update_movie_medior(
+  IN update_movie_id INT(11),
+  IN new_title VARCHAR(255),
+  IN new_description TEXT,
+  IN update_title BOOLEAN,
+  IN update_description BOOLEAN
+)
+BEGIN
+  START TRANSACTION;
+  DECLARE commit_update BOOLEAN DEFAULT TRUE;
+
+  IF update_title THEN
+    UPDATE movie SET title = new_title WHERE movie_id = update_movie_id;
+  END IF;
+  
+  IF update_description THEN
+    UPDATE movie SET description = new_description WHERE movie_id = update_movie_id;
+  END IF;
+  
+  IF ROW_COUNT() = 0 THEN
+    SET commit_update = FALSE;
+  END IF;
+
+  IF commit_update THEN
+    COMMIT;
+  ELSE
+    ROLLBACK;
+  END IF;
+END;
+GRANT EXECUTE ON PROCEDURE update_movie_medior TO medior, senior;
+
+CREATE PROCEDURE update_episode_medior(
+  IN update_episode_id INT(11),
+  IN new_title VARCHAR(255),
+  IN new_description TEXT,
+  IN update_title BOOLEAN,
+  IN update_description BOOLEAN
+)
+BEGIN
+  START TRANSACTION;
+  DECLARE commit_update BOOLEAN DEFAULT TRUE;
+
+  IF update_title THEN
+    UPDATE episode SET title = new_title WHERE episode_id = update_episode_id;
+  END IF;
+  
+  IF update_description THEN
+    UPDATE episode SET description = new_description WHERE episode_id = update_episode_id;
+  END IF;
+  
+  IF ROW_COUNT() = 0 THEN
+    SET commit_update = FALSE;
+  END IF;
+
+  IF commit_update THEN
+    COMMIT;
+  ELSE
+    ROLLBACK;
+  END IF;
+END;
+GRANT EXECUTE ON PROCEDURE update_episode_medior TO medior, senior;
+
+CREATE PROCEDURE update_season_medior(
+  IN update_season_id INT(11),
+  IN new_name VARCHAR(255),
+  IN new_description TEXT,
+  IN update_name BOOLEAN,
+  IN update_description BOOLEAN
+)
+BEGIN
+  START TRANSACTION;
+  DECLARE commit_update BOOLEAN DEFAULT TRUE;
+
+  IF update_name THEN
+    UPDATE season SET name = new_name WHERE season_id = update_season_id;
+  END IF;
+  
+  IF update_description THEN
+    UPDATE season SET description = new_description WHERE season_id = update_season_id;
+  END IF;
+  
+  IF ROW_COUNT() = 0 THEN
+    SET commit_update = FALSE;
+  END IF;
+
+  IF commit_update THEN
+    COMMIT;
+  ELSE
+    ROLLBACK;
+  END IF;
+END;
+GRANT EXECUTE ON PROCEDURE update_season_medior TO medior, senior;
+
+CREATE PROCEDURE update_genre_medior(
+  IN update_genre_id INT(11),
+  IN new_title VARCHAR(255),
+  IN new_description TEXT,
+  IN update_title BOOLEAN,
+  IN update_description BOOLEAN
+)
+BEGIN
+  START TRANSACTION;
+  DECLARE commit_update BOOLEAN DEFAULT TRUE;
+
+  IF update_title THEN
+    UPDATE genre SET title = new_title WHERE genre_id = update_genre_id;
+  END IF;
+  
+  IF update_description THEN
+    UPDATE genre SET description = new_description WHERE genre_id = update_genre_id;
+  END IF;
+  
+  IF ROW_COUNT() = 0 THEN
+    SET commit_update = FALSE;
+  END IF;
+
+  IF commit_update THEN
+    COMMIT;
+  ELSE
+    ROLLBACK;
+  END IF;
+END;
+GRANT EXECUTE ON PROCEDURE update_genre_medior TO medior, senior;
+
+CREATE PROCEDURE update_definition_type_medior(
+  IN update_definition_type_id INT(11),
+  IN new_name VARCHAR(255)
+)
+BEGIN
+  START TRANSACTION;
+  DECLARE commit_update BOOLEAN DEFAULT TRUE;
+
+  UPDATE definition_type SET name = new_name WHERE definition_type_id = update_definition_type_id;
+  
+  IF ROW_COUNT() = 0 THEN
+    SET commit_update = FALSE;
+  END IF;
+
+  IF commit_update THEN
+    COMMIT;
+  ELSE
+    ROLLBACK;
+  END IF;
+END;
+GRANT EXECUTE ON PROCEDURE update_definition_type_medior TO medior, senior;
+
+CREATE PROCEDURE update_season_medior(
+  IN update_season_id INT(11),
+  IN new_description TEXT
+)
+BEGIN
+  START TRANSACTION;
+  DECLARE commit_update BOOLEAN DEFAULT TRUE;
+
+  UPDATE season SET description = new_description WHERE season_id = update_season_id;
+  
+  IF ROW_COUNT() = 0 THEN
+    SET commit_update = FALSE;
+  END IF;
+
+  IF commit_update THEN
+    COMMIT;
+  ELSE
+    ROLLBACK;
+  END IF;
+END;
+GRANT EXECUTE ON PROCEDURE update_season_medior TO medior, senior;
+
+CREATE PROCEDURE update_viewer_guide_medior(
+  IN update_viewer_guide_id INT(11),
+  IN new_name VARCHAR(255)
+)
+BEGIN
+  START TRANSACTION;
+  DECLARE commit_update BOOLEAN DEFAULT TRUE;
+
+  UPDATE viewer_guide SET name = new_name WHERE viewer_guide_id = update_viewer_guide_id;
+  
+  IF ROW_COUNT() = 0 THEN
+    SET commit_update = FALSE;
+  END IF;
+
+  IF commit_update THEN
+    COMMIT;
+  ELSE
+    ROLLBACK;
+  END IF;
+END;
+GRANT EXECUTE ON PROCEDURE update_viewer_guide_medior TO medior, senior;

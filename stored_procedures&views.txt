@@ -1,3 +1,4 @@
+DELIMITER //
 CREATE PROCEDURE create_account(
   IN user_first_name VARCHAR(255),
   IN user_last_name VARCHAR(255),
@@ -14,10 +15,14 @@ CREATE PROCEDURE create_account(
   IN user_min_age INT(11)
 )
 BEGIN
-  START TRANSACTION;
   DECLARE commit_insert BOOLEAN DEFAULT TRUE;
-
   DECLARE new_account_id INT;
+
+  DECLARE EXIT HANDLER FOR SQLEXCEPTION, NOT FOUND, SQLWARNING
+  BEGIN  
+    ROLLBACK;
+  END;
+  
   INSERT INTO account (first_name, last_name, email, password, payment_method, blocked_end_time, email_validated) VALUES (user_first_name, user_last_name, user_email, user_password, user_payment_method, MAKEDATE(1970,365), false);
   SET new_account_id = LAST_INSERT_ID();
   CALL change_subscription(new_account_id, user_subscription_id);
@@ -32,8 +37,10 @@ BEGIN
   ELSE
     ROLLBACK;
   END IF;
-END;
+END; //
+DELIMITER ;
 
+DELIMITER //
 CREATE PROCEDURE create_profile(
   IN user_account_id INT(11),
   IN user_profile_name VARCHAR(255),
@@ -45,8 +52,12 @@ CREATE PROCEDURE create_profile(
   IN user_min_age INT(11)
 )
 BEGIN
-  START TRANSACTION;
   DECLARE commit_insert BOOLEAN DEFAULT TRUE;
+  DECLARE EXIT HANDLER FOR SQLEXCEPTION, NOT FOUND, SQLWARNING
+  BEGIN
+    ROLLBACK;
+  END;
+  START TRANSACTION;
 
   INSERT INTO preference (view_movies, view_series, min_age) VALUES (user_view_movies, user_view_series, user_min_age);
   INSERT INTO profile (account_id, profile_name, profile_image, profile_age, language_id, preference_id) VALUES (user_account_id, user_profile_name, user_profile_image, user_profile_age, user_language_id, LAST_INSERT_ID());
@@ -60,25 +71,33 @@ BEGIN
   ELSE
     ROLLBACK;
   END IF;
-END;
+END; //
+DELIMITER ;
 
 CREATE VIEW account_email_password_view AS SELECT email, password FROM account;
 CREATE INDEX idx_email ON account(email);
 
+DELIMITER //
 CREATE PROCEDURE get_login_data(
   IN user_email VARCHAR(255)
 )
 BEGIN
   SELECT account_id, email, password FROM account_email_password_view WHERE email = user_email LIMIT 1;
-END;
+END; //
+DELIMITER ;
 
+DELIMITER //
 CREATE PROCEDURE update_login_data(
   IN user_email VARCHAR(255),
   IN user_password VARCHAR(255)
 )
 BEGIN
-  START TRANSACTION;
   DECLARE commit_update BOOLEAN DEFAULT TRUE;
+  DECLARE EXIT HANDLER FOR SQLEXCEPTION, NOT FOUND, SQLWARNING
+  BEGIN
+    ROLLBACK;
+  END;
+  START TRANSACTION;
 
   UPDATE account SET password = user_password WHERE email = user_email;
   
@@ -91,14 +110,20 @@ BEGIN
   ELSE
     ROLLBACK;
   END IF;
-END;
+END; //
+DELIMITER ;
 
+DELIMITER //
 CREATE PROCEDURE validate_email(
   IN user_email VARCHAR(255)
 )
 BEGIN
-  START TRANSACTION;
   DECLARE commit_update BOOLEAN DEFAULT TRUE;
+  DECLARE EXIT HANDLER FOR SQLEXCEPTION, NOT FOUND, SQLWARNING
+  BEGIN
+    ROLLBACK;
+  END;
+  START TRANSACTION;
 
   UPDATE account SET email_validated = true WHERE email = user_email;
   
@@ -111,8 +136,10 @@ BEGIN
   ELSE
     ROLLBACK;
   END IF;
-END;
+END; //
+DELIMITER ;
 
+DELIMITER //
 CREATE PROCEDURE update_profile(
   IN user_account_id INT(11),
   IN user_profile_name VARCHAR(255),
@@ -123,10 +150,13 @@ CREATE PROCEDURE update_profile(
   IN update_age BOOLEAN
 )
 BEGIN
-  START TRANSACTION;
   DECLARE commit_update BOOLEAN DEFAULT TRUE;
-
   DECLARE update_query VARCHAR(1000);
+  DECLARE EXIT HANDLER FOR SQLEXCEPTION, NOT FOUND, SQLWARNING
+  BEGIN
+    ROLLBACK;
+  END;
+  START TRANSACTION;
 
   SET update_query = 'UPDATE profile SET ';
 
@@ -165,15 +195,21 @@ BEGIN
   ELSE
     ROLLBACK;
   END IF;
-END;
+END; //
+DELIMITER ;
 
+DELIMITER //
 CREATE PROCEDURE change_subscription(
   IN user_account_id INT(11),
   IN user_subscription_id INT(11)
 )
 BEGIN
-  START TRANSACTION;
   DECLARE commit_insert BOOLEAN DEFAULT TRUE;
+  DECLARE EXIT HANDLER FOR SQLEXCEPTION, NOT FOUND, SQLWARNING
+  BEGIN
+    ROLLBACK;
+  END;
+  START TRANSACTION;
 
   INSERT INTO subscription_record (account_id, subscription_id, start_date) VALUES (user_account_id, user_subscription_id, NOW());
   
@@ -186,20 +222,24 @@ BEGIN
   ELSE
     ROLLBACK;
   END IF;
-END;
+END; //
+DELIMITER ;
 
 CREATE VIEW subscription_definition_view AS SELECT subscription.subscription_id, definition_type.name FROM account INNER JOIN subscription ON subscription.definition_type = definition_type.definition_type_id;
 
+DELIMITER //
 CREATE PROCEDURE get_subscription_definition(
   IN user_subscription_id INT(11)
 )
 BEGIN
   SELECT definition_type.name FROM subscription_definition_view WHERE subscription.subscription_id = user_subscription_id;
-END;
+END; //
+DELIMITER ;
 
 CREATE VIEW movie_viewer_guide_view AS SELECT movie.movie_id, GROUP_CONCAT(viewer_guide.name ORDER BY viewer_guide.guide_id ASC) AS viewer_guides FROM movie JOIN movie_viewer_guide ON movie.movie_id = movie_viewer_guide.movie_id JOIN viewer_guide ON movie_viewer_guide.guide_id = viewer_guide.guide_id GROUP BY movie.movie_id;
 CREATE VIEW movie_view AS SELECT movie.movie_id, movie.title, movie.duration, movie.description, definition_type.name, genre.name, movie_viewer_guide_view.viewer_guides FROM movie LEFT JOIN definition_type ON movie.definition_type = definition_type.definition_type_id JOIN genre ON movie.genre_id = genre.genre_id JOIN movie_viewer_guide_view ON movie.movie_id = movie_viewer_guide_view.movie_id;
 
+DELIMITER //
 CREATE PROCEDURE get_movies_available_with_definition(
   IN user_definition_type INT(11), 
   IN user_preference_id INT(11)
@@ -212,8 +252,10 @@ BEGIN
   DELETE FROM temp_result WHERE (user_definition_type IS NOT NULL AND temp_result.definition_type != user_definition_type) OR (viewer_guide_list IS NOT NULL AND FIND_IN_SET(temp_result.viewer_guides, viewer_guide_list) = 0);
   SELECT * FROM temp_result;
   DROP TEMPORARY TABLE IF EXISTS temp_result;
-END;
+END; //
+DELIMITER ;
 
+DELIMITER //
 CREATE PROCEDURE update_progress(
   IN user_profile_id INT(11),
   IN is_episode BOOLEAN,
@@ -222,8 +264,12 @@ CREATE PROCEDURE update_progress(
   IN progress_timestamp datetime
   )
 BEGIN
-  START TRANSACTION;
   DECLARE commit_update BOOLEAN DEFAULT TRUE;
+  DECLARE EXIT HANDLER FOR SQLEXCEPTION, NOT FOUND, SQLWARNING
+  BEGIN
+    ROLLBACK;
+  END;
+  START TRANSACTION;
 
   UPDATE progress SET timestamp = progress_timestamp, watch_date = CURDATE(), watch_count = watch_count + 1 WHERE user_profile_id = profile_id AND (is_episode AND progress_episode_id = episode_id OR (NOT is_episode AND progress_movie_id = movie_id));
 
@@ -236,16 +282,22 @@ BEGIN
   ELSE
     ROLLBACK;
   END IF;
-END;
+END; //
+DELIMITER ;
 
+DELIMITER //
 CREATE PROCEDURE add_to_watchlist(
   IN user_profile_id INT(11),
   IN is_episode BOOLEAN,
   IN watch_id INT(11)
 )
 BEGIN
-  START TRANSACTION;
   DECLARE commit_insert BOOLEAN DEFAULT TRUE;
+  DECLARE EXIT HANDLER FOR SQLEXCEPTION, NOT FOUND, SQLWARNING
+  BEGIN
+    ROLLBACK;
+  END;
+  START TRANSACTION;
 
   IF is_episode THEN
     INSERT INTO watchlist (profile_id, episode_id) VALUES (user_profile_id, watch_id);
@@ -262,16 +314,22 @@ BEGIN
   ELSE
     ROLLBACK;
   END IF;
-END;
+END; //
+DELIMITER ;
 
+DELIMITER //
 CREATE PROCEDURE remove_from_watchlist(
   IN user_profile_id INT(11),
   IN is_episode BOOLEAN,
   IN watch_id INT(11)
 )
 BEGIN
-  START TRANSACTION;
   DECLARE commit_delete BOOLEAN DEFAULT TRUE;
+  DECLARE EXIT HANDLER FOR SQLEXCEPTION, NOT FOUND, SQLWARNING
+  BEGIN
+    ROLLBACK;
+  END;
+  START TRANSACTION;
 
   IF is_episode THEN
     DELETE FROM watchlist WHERE profile_id = user_profile_id AND episode_id = watch_id;
@@ -288,8 +346,10 @@ BEGIN
   ELSE
     ROLLBACK;
   END IF;
-END;
+END; //
+DELIMITER ;
 
+DELIMITER //
 CREATE PROCEDURE get_subtitle_languages(
   IN is_episode BOOLEAN,
   IN watch_id INT(11)
@@ -300,11 +360,13 @@ BEGIN
   ELSE
     SELECT subtitle.subtitle_location, languages.title FROM subtitle JOIN languages ON subtitle.language_id = languages.id WHERE subtitles.movie_id = watch_id;
   END IF
-END;
+END; //
+DELIMITER ;
 
 CREATE VIEW movie_watch_count_view AS SELECT movie_id, SUM(watch_count) AS total_watch_count FROM progress WHERE movie_id != NULL GROUP BY movie_id;
 CREATE VIEW episode_watch_count_view AS SELECT episode_id, SUM(watch_count) AS total_watch_count FROM progress WHERE episode_id != NULL GROUP BY episode_id;
 
+DELIMITER //
 CREATE PROCEDURE get_watch_count(
   IN is_episode BOOLEAN,
   IN watch_id INT(11)
@@ -315,7 +377,8 @@ BEGIN
   ELSE
     SELECT total_watch_count FROM movie_watch_count_view WHERE movie_id = watch_id;
   END IF
-END;
+END; //
+DELIMITER ;
 
 CREATE ROLE junior WITH LOGIN;
 CREATE ROLE medior WITH LOGIN;
@@ -347,12 +410,14 @@ GRANT SELECT ON episode_watch_count_view TO junior, medior, senior;
 
 GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE account, definition_type, episode, episode_viewer_guide, genre, language, movie, movie_viewer_guide, preference, preference_genre, preference_viewer_guide, profile, progress, season, series, subscription, subscription_record, subtitle, viewer_guide, watchlist TO senior;
 
+DELIMITER //
 CREATE PROCEDURE get_daily_income(
   IN date_of DATE
 )
 BEGIN
   SELECT SUM(subscription.subscription_price) FROM subscription JOIN subscription_record ON subscription.subscription_id = subscription_record.subscription_id WHERE subscription_record.start_date = date_of;
-END;
+END; //
+DELIMITER ;
 GRANT EXECUTE ON PROCEDURE get_daily_income TO senior;
 
 CREATE VIEW account_junior_view AS SELECT account_id, blocked_end_time, email_validated FROM account;
@@ -373,13 +438,18 @@ GRANT SELECT ON subscription_junior_view TO junior, medior, senior;
 CREATE VIEW language_junior_view as SELECT * FROM language;
 GRANT SELECT ON language_junior_view TO junior, medior, senior;
 
+DELIMITER //
 CREATE PROCEDURE update_language_title(
   IN update_language_id INT(11),
   IN new_title VARCHAR(100)
 )
 BEGIN
-  START TRANSACTION;
   DECLARE commit_update BOOLEAN DEFAULT TRUE;
+  DECLARE EXIT HANDLER FOR SQLEXCEPTION, NOT FOUND, SQLWARNING
+  BEGIN
+    ROLLBACK;
+  END;
+  START TRANSACTION;
 
   UPDATE language SET title = new_title WHERE language_id = update_language_id;
   
@@ -392,12 +462,14 @@ BEGIN
   ELSE
     ROLLBACK;
   END IF;
-END;
+END; //
+DELIMITER ;
 GRANT EXECUTE ON PROCEDURE update_language_title TO medior, senior;
 
 CREATE VIEW profile_junior_view AS SELECT * FROM profile;
 GRANT SELECT ON profile_junior_view TO junior, medior, senior;
 
+DELIMITER //
 CREATE PROCEDURE update_profile_medior(
   IN update_profile_id INT(11),
   IN user_profile_image VARCHAR(255),
@@ -406,8 +478,12 @@ CREATE PROCEDURE update_profile_medior(
   IN update_profile_age BOOLEAN
 )
 BEGIN
-  START TRANSACTION;
   DECLARE commit_update BOOLEAN DEFAULT TRUE;
+  DECLARE EXIT HANDLER FOR SQLEXCEPTION, NOT FOUND, SQLWARNING
+  BEGIN
+    ROLLBACK;
+  END;
+  START TRANSACTION;
 
   IF update_profile_image THEN
     UPDATE profile SET profile_image = new_profile_image WHERE profile_id = update_profile_id;
@@ -426,7 +502,8 @@ BEGIN
   ELSE
     ROLLBACK;
   END IF;
-END;
+END; //
+DELIMITER ;
 GRANT EXECUTE ON PROCEDURE update_profile_medior TO medior, senior;
 
 CREATE VIEW preference_genre_view as SELECT * FROM preference_genre;
@@ -474,13 +551,18 @@ GRANT SELECT ON series_view TO junior, medior, senior;
 CREATE VIEW movie_viewer_guide_view as SELECT * FROM movie_viewer_guide;
 GRANT SELECT ON movie_viewer_guide_view TO junior, medior, senior;
 
+DELIMITER //
 CREATE PROCEDURE update_preference_medior(
   IN update_preference_id INT(11),
   IN new_min_age INT(11)
 )
 BEGIN
-  START TRANSACTION;
   DECLARE commit_update BOOLEAN DEFAULT TRUE;
+  DECLARE EXIT HANDLER FOR SQLEXCEPTION, NOT FOUND, SQLWARNING
+  BEGIN
+    ROLLBACK;
+  END;
+  START TRANSACTION;
 
   UPDATE preference SET min_age = new_min_age WHERE preference_id = update_preference_id;
   
@@ -493,16 +575,22 @@ BEGIN
   ELSE
     ROLLBACK;
   END IF;
-END;
+END; //
+DELIMITER ;
 GRANT EXECUTE ON PROCEDURE update_preference_medior TO medior, senior;
 
+DELIMITER //
 CREATE PROCEDURE update_subtitle_medior(
   IN update_subtitle_id INT(11),
   IN new_subtitle_location VARCHAR(255)
 )
 BEGIN
-  START TRANSACTION;
   DECLARE commit_update BOOLEAN DEFAULT TRUE;
+  DECLARE EXIT HANDLER FOR SQLEXCEPTION, NOT FOUND, SQLWARNING
+  BEGIN
+    ROLLBACK;
+  END;
+  START TRANSACTION;
 
   UPDATE subtitle SET subtitle_location = new_subtitle_location WHERE subtitle_id = update_subtitle_id;
   
@@ -515,9 +603,11 @@ BEGIN
   ELSE
     ROLLBACK;
   END IF;
-END;
+END; //
+DELIMITER ;
 GRANT EXECUTE ON PROCEDURE update_subtitle_medior TO medior, senior;
 
+DELIMITER //
 CREATE PROCEDURE update_movie_medior(
   IN update_movie_id INT(11),
   IN new_title VARCHAR(255),
@@ -526,8 +616,12 @@ CREATE PROCEDURE update_movie_medior(
   IN update_description BOOLEAN
 )
 BEGIN
-  START TRANSACTION;
   DECLARE commit_update BOOLEAN DEFAULT TRUE;
+  DECLARE EXIT HANDLER FOR SQLEXCEPTION, NOT FOUND, SQLWARNING
+  BEGIN
+    ROLLBACK;
+  END;
+  START TRANSACTION;
 
   IF update_title THEN
     UPDATE movie SET title = new_title WHERE movie_id = update_movie_id;
@@ -546,9 +640,11 @@ BEGIN
   ELSE
     ROLLBACK;
   END IF;
-END;
+END; //
+DELIMITER ;
 GRANT EXECUTE ON PROCEDURE update_movie_medior TO medior, senior;
 
+DELIMITER //
 CREATE PROCEDURE update_episode_medior(
   IN update_episode_id INT(11),
   IN new_title VARCHAR(255),
@@ -557,8 +653,12 @@ CREATE PROCEDURE update_episode_medior(
   IN update_description BOOLEAN
 )
 BEGIN
-  START TRANSACTION;
   DECLARE commit_update BOOLEAN DEFAULT TRUE;
+  DECLARE EXIT HANDLER FOR SQLEXCEPTION, NOT FOUND, SQLWARNING
+  BEGIN
+    ROLLBACK;
+  END;
+  START TRANSACTION;
 
   IF update_title THEN
     UPDATE episode SET title = new_title WHERE episode_id = update_episode_id;
@@ -577,9 +677,11 @@ BEGIN
   ELSE
     ROLLBACK;
   END IF;
-END;
+END; //
+DELIMITER ;
 GRANT EXECUTE ON PROCEDURE update_episode_medior TO medior, senior;
 
+DELIMITER //
 CREATE PROCEDURE update_season_medior(
   IN update_season_id INT(11),
   IN new_name VARCHAR(255),
@@ -588,8 +690,12 @@ CREATE PROCEDURE update_season_medior(
   IN update_description BOOLEAN
 )
 BEGIN
-  START TRANSACTION;
   DECLARE commit_update BOOLEAN DEFAULT TRUE;
+  DECLARE EXIT HANDLER FOR SQLEXCEPTION, NOT FOUND, SQLWARNING
+  BEGIN
+    ROLLBACK;
+  END;
+  START TRANSACTION;
 
   IF update_name THEN
     UPDATE season SET name = new_name WHERE season_id = update_season_id;
@@ -608,9 +714,11 @@ BEGIN
   ELSE
     ROLLBACK;
   END IF;
-END;
+END; //
+DELIMITER ;
 GRANT EXECUTE ON PROCEDURE update_season_medior TO medior, senior;
 
+DELIMITER //
 CREATE PROCEDURE update_genre_medior(
   IN update_genre_id INT(11),
   IN new_title VARCHAR(255),
@@ -619,8 +727,12 @@ CREATE PROCEDURE update_genre_medior(
   IN update_description BOOLEAN
 )
 BEGIN
-  START TRANSACTION;
   DECLARE commit_update BOOLEAN DEFAULT TRUE;
+  DECLARE EXIT HANDLER FOR SQLEXCEPTION, NOT FOUND, SQLWARNING
+  BEGIN
+    ROLLBACK;
+  END;
+  START TRANSACTION;
 
   IF update_title THEN
     UPDATE genre SET title = new_title WHERE genre_id = update_genre_id;
@@ -639,16 +751,22 @@ BEGIN
   ELSE
     ROLLBACK;
   END IF;
-END;
+END; //
+DELIMITER ;
 GRANT EXECUTE ON PROCEDURE update_genre_medior TO medior, senior;
 
+DELIMITER //
 CREATE PROCEDURE update_definition_type_medior(
   IN update_definition_type_id INT(11),
   IN new_name VARCHAR(255)
 )
 BEGIN
-  START TRANSACTION;
   DECLARE commit_update BOOLEAN DEFAULT TRUE;
+  DECLARE EXIT HANDLER FOR SQLEXCEPTION, NOT FOUND, SQLWARNING
+  BEGIN
+    ROLLBACK;
+  END;
+  START TRANSACTION;
 
   UPDATE definition_type SET name = new_name WHERE definition_type_id = update_definition_type_id;
   
@@ -661,16 +779,22 @@ BEGIN
   ELSE
     ROLLBACK;
   END IF;
-END;
+END; //
+DELIMITER ;
 GRANT EXECUTE ON PROCEDURE update_definition_type_medior TO medior, senior;
 
+DELIMITER //
 CREATE PROCEDURE update_season_medior(
   IN update_season_id INT(11),
   IN new_description TEXT
 )
 BEGIN
-  START TRANSACTION;
   DECLARE commit_update BOOLEAN DEFAULT TRUE;
+  DECLARE EXIT HANDLER FOR SQLEXCEPTION, NOT FOUND, SQLWARNING
+  BEGIN
+    ROLLBACK;
+  END;
+  START TRANSACTION;
 
   UPDATE season SET description = new_description WHERE season_id = update_season_id;
   
@@ -683,16 +807,22 @@ BEGIN
   ELSE
     ROLLBACK;
   END IF;
-END;
+END; //
+DELIMITER ;
 GRANT EXECUTE ON PROCEDURE update_season_medior TO medior, senior;
 
+DELIMITER //
 CREATE PROCEDURE update_viewer_guide_medior(
   IN update_viewer_guide_id INT(11),
   IN new_name VARCHAR(255)
 )
 BEGIN
-  START TRANSACTION;
   DECLARE commit_update BOOLEAN DEFAULT TRUE;
+  DECLARE EXIT HANDLER FOR SQLEXCEPTION, NOT FOUND, SQLWARNING
+  BEGIN
+    ROLLBACK;
+  END;
+  START TRANSACTION;
 
   UPDATE viewer_guide SET name = new_name WHERE viewer_guide_id = update_viewer_guide_id;
   
@@ -705,5 +835,8 @@ BEGIN
   ELSE
     ROLLBACK;
   END IF;
-END;
+END; //
+DELIMITER ;
 GRANT EXECUTE ON PROCEDURE update_viewer_guide_medior TO medior, senior;
+
+$$

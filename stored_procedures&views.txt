@@ -225,7 +225,7 @@ BEGIN
 END; //
 DELIMITER ;
 
-CREATE VIEW subscription_definition_view AS SELECT subscription.subscription_id, definition_type.name FROM account INNER JOIN subscription ON subscription.definition_type = definition_type.definition_type_id;
+CREATE VIEW subscription_definition_view AS SELECT subscription.subscription_id, definition_type.name FROM subscription JOIN definition_type ON subscription.definition_type = definition_type.definition_type_id;
 
 DELIMITER //
 CREATE PROCEDURE get_subscription_definition(
@@ -236,8 +236,8 @@ BEGIN
 END; //
 DELIMITER ;
 
-CREATE VIEW movie_viewer_guide_view AS SELECT movie.movie_id, GROUP_CONCAT(viewer_guide.name ORDER BY viewer_guide.guide_id ASC) AS viewer_guides FROM movie JOIN movie_viewer_guide ON movie.movie_id = movie_viewer_guide.movie_id JOIN viewer_guide ON movie_viewer_guide.guide_id = viewer_guide.guide_id GROUP BY movie.movie_id;
-CREATE VIEW movie_view AS SELECT movie.movie_id, movie.title, movie.duration, movie.description, definition_type.name, genre.name, movie_viewer_guide_view.viewer_guides FROM movie LEFT JOIN definition_type ON movie.definition_type = definition_type.definition_type_id JOIN genre ON movie.genre_id = genre.genre_id JOIN movie_viewer_guide_view ON movie.movie_id = movie_viewer_guide_view.movie_id;
+CREATE VIEW movie_viewer_guide_view AS SELECT movie.movie_id, GROUP_CONCAT(viewer_guide.name ORDER BY viewer_guide.viewer_guide_id ASC) AS viewer_guides FROM movie JOIN movie_viewer_guide ON movie.movie_id = movie_viewer_guide.movie_id JOIN viewer_guide ON movie_viewer_guide.viewer_guide_id = viewer_guide.viewer_guide_id GROUP BY movie.movie_id;
+CREATE VIEW movie_view AS SELECT movie.movie_id, movie.title, movie.duration, movie.description, definition_type.name, genre.title AS genre, movie_viewer_guide_view.viewer_guides FROM movie LEFT JOIN definition_type ON movie.definition_type_id = definition_type.definition_type_id JOIN genre ON movie.genre_id = genre.genre_id JOIN movie_viewer_guide_view ON movie.movie_id = movie_viewer_guide_view.movie_id;
 
 DELIMITER //
 CREATE PROCEDURE get_movies_available_with_definition(
@@ -303,7 +303,7 @@ BEGIN
     INSERT INTO watchlist (profile_id, episode_id) VALUES (user_profile_id, watch_id);
   ELSE
     INSERT INTO watchlist (profile_id, movie_id) VALUES (user_profile_id, watch_id);
-  END IF
+  END IF;
   
   IF ROW_COUNT() = 0 THEN
     SET commit_insert = FALSE;
@@ -335,7 +335,7 @@ BEGIN
     DELETE FROM watchlist WHERE profile_id = user_profile_id AND episode_id = watch_id;
   ELSE
     DELETE FROM watchlist WHERE profile_id = user_profile_id AND movie_id = watch_id;
-  END IF
+  END IF;
 
   IF ROW_COUNT() = 0 THEN
     SET commit_delete = FALSE;
@@ -359,7 +359,7 @@ BEGIN
     SELECT subtitle.subtitle_location, languages.title FROM subtitle JOIN languages ON subtitle.language_id = languages.id WHERE subtitles.episode_id = watch_id;
   ELSE
     SELECT subtitle.subtitle_location, languages.title FROM subtitle JOIN languages ON subtitle.language_id = languages.id WHERE subtitles.movie_id = watch_id;
-  END IF
+  END IF;
 END; //
 DELIMITER ;
 
@@ -376,14 +376,14 @@ BEGIN
     SELECT total_watch_count FROM episode_watch_count_view WHERE episode_id = watch_id;
   ELSE
     SELECT total_watch_count FROM movie_watch_count_view WHERE movie_id = watch_id;
-  END IF
+  END IF;
 END; //
 DELIMITER ;
 
-CREATE ROLE junior WITH LOGIN;
-CREATE ROLE medior WITH LOGIN;
-CREATE ROLE senior WITH LOGIN;
-REVOKE ALL FROM junior, medior, senior;
+CREATE ROLE junior;
+CREATE ROLE medior;
+CREATE ROLE senior;
+REVOKE ALL ON *.* FROM junior, medior, senior;
 
 -- Sommigen worden gedaan door de app, maar betekent dit dat junior hier ook toestemming voor heeft? --
 GRANT EXECUTE ON PROCEDURE create_account TO junior, medior, senior;
@@ -408,7 +408,7 @@ GRANT SELECT ON movie_view TO junior, medior, senior;
 GRANT SELECT ON movie_watch_count_view TO junior, medior, senior;
 GRANT SELECT ON episode_watch_count_view TO junior, medior, senior;
 
-GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE account, definition_type, episode, episode_viewer_guide, genre, language, movie, movie_viewer_guide, preference, preference_genre, preference_viewer_guide, profile, progress, season, series, subscription, subscription_record, subtitle, viewer_guide, watchlist TO senior;
+GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE * TO senior;
 
 DELIMITER //
 CREATE PROCEDURE get_daily_income(
@@ -548,8 +548,8 @@ GRANT SELECT ON season_view TO junior, medior, senior;
 CREATE VIEW series_view as SELECT * FROM series;
 GRANT SELECT ON series_view TO junior, medior, senior;
 
-CREATE VIEW movie_viewer_guide_view as SELECT * FROM movie_viewer_guide;
-GRANT SELECT ON movie_viewer_guide_view TO junior, medior, senior;
+CREATE VIEW movie_viewer_guide_junior_view as SELECT * FROM movie_viewer_guide;
+GRANT SELECT ON movie_viewer_guide_junior_view TO junior, medior, senior;
 
 DELIMITER //
 CREATE PROCEDURE update_preference_medior(
@@ -838,5 +838,3 @@ BEGIN
 END; //
 DELIMITER ;
 GRANT EXECUTE ON PROCEDURE update_viewer_guide_medior TO medior, senior;
-
-$$

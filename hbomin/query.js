@@ -7,8 +7,7 @@ function runQuery(dbQuery, callback) {
       callback(null, error); // Pass error to the callback
     } else {
       callback(results, null); // Pass results to the callback
-      console.log(results);
-    }
+    };
   });
 }
 

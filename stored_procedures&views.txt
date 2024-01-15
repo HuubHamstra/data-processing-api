@@ -82,7 +82,7 @@ CREATE PROCEDURE get_login_data(
   IN user_email VARCHAR(255)
 )
 BEGIN
-  SELECT account_id, email, password FROM account_email_password_view WHERE email = user_email LIMIT 1;
+  SELECT email, password FROM account_email_password_view WHERE email = user_email LIMIT 1;
 END; //
 DELIMITER ;
 

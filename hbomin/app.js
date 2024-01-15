@@ -8,6 +8,7 @@ var cors = require('cors');
 var indexRouter = require('./routes/index');
 var usersRouter = require('./routes/users');
 var loginRouter = require('./routes/login');
+var registerRouter = require('./routes/register');
 var refreshRouter = require('./routes/refresh-token');
 
 //Account
@@ -31,6 +32,7 @@ app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 
 app.use('/login', loginRouter);
+app.use('/register', registerRouter);
 app.use('/refresh-token', refreshRouter);
 app.use('/', indexRouter);
 app.use('/users', usersRouter);

@@ -1,9 +1,10 @@
 const express = require('express');
 const jwt = require('jsonwebtoken');
 const router = express.Router();
+const { secretKey, refreshTokens } = require('./config'); // Import shared configurations
 
 // Endpoint for refreshing the access token
-router.post('/refresh-token', (req, res) => {
+router.post('/', (req, res) => {
   const { email, refreshToken } = req.body;
 
   // Validate the refresh token
@@ -12,14 +13,14 @@ router.post('/refresh-token', (req, res) => {
   }
 
   // If the refresh token is valid, issue a new access token
-  const accessToken = jwt.sign({ email }, secretKey, { expiresIn: '1h' });
+  const accessToken = jwt.sign({ email }, secretKey, { expiresIn: '15m' });
   res.json({ accessToken });
 });
 
 // Function to validate the refresh token
-function isValidRefreshToken(email, refreshToken) {
+function isValidRefreshToken(email, providedRefreshToken) {
     // Check if the stored token matches the provided token
-    return refreshToken[email] === refreshToken;
+    return refreshTokens[email] === providedRefreshToken;
 }
 
 module.exports = router;

@@ -17,12 +17,6 @@ router.post('/', (req, res) => {
     const refreshToken = generateRefreshToken();
     refreshTokens[email] = refreshToken;
 
-    // Set access token as a regular cookie
-    res.cookie('accessToken', accessToken, { maxAge: 900000, httpOnly: true });
-
-    // Set refresh token as an HttpOnly and secure cookie
-    res.cookie('refreshToken', refreshToken, { maxAge: 3600000, httpOnly: true, secure: true, sameSite: 'Strict' });
-
     res.json({ accessToken, refreshToken });
   } else {
     res.status(401).json({ message: 'Invalid username or password' });

@@ -10,6 +10,12 @@ var usersRouter = require('./routes/users');
 var loginRouter = require('./routes/login');
 var refreshRouter = require('./routes/refresh-token');
 
+//Account
+var registerRouter = require('./routes/register');
+
+// Movie routes
+var movieListRouter = require('./routes/movie/movielist');
+
 var app = express();
 
 app.use(cors({ origin: 'http://localhost:4200', credentials: true }));
@@ -28,6 +34,12 @@ app.use('/login', loginRouter);
 app.use('/refresh-token', refreshRouter);
 app.use('/', indexRouter);
 app.use('/users', usersRouter);
+
+// Account Use
+app.use("/register", registerRouter);
+
+// Movie use
+app.use("/movie/movielist", movieListRouter);
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {

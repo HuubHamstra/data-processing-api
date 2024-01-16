@@ -7,12 +7,13 @@ const bcrypt = require('bcrypt');
 const { secretKey, refreshTokens } = require('./config'); // Import shared configurations
 
 // Handle POST request for login
-router.post('/', (req, res) => {
+router.post('/', async (req, res) => {
   const { email, password } = req.body;
+  const dbQuery = `CALL get_login_data('${email}')`;
+  let login_data = await query.outputJSON(dbQuery, res);
+  received_password = login_data[0][0].password;
 
-  let login_data = query.outputJSON(`CALL get_login_data(${email})`, router);
-
-  verifyPassword(password, login_data).then(is_match => {
+  verifyPassword(password, received_password).then(is_match => {
     if (is_match) {
       // Generate JWT token upon successful login
       const accessToken = jwt.sign({ email }, secretKey, { expiresIn: '15m' });
@@ -20,7 +21,6 @@ router.post('/', (req, res) => {
       // Generate and store refresh token
       const refreshToken = generateRefreshToken();
       refreshTokens[email] = refreshToken;
-
       res.json({ accessToken, refreshToken });
     } else {
       res.status(401).json({ message: 'Invalid username or password' });

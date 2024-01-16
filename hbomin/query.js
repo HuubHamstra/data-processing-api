@@ -13,34 +13,27 @@ function runQuery(dbQuery) {
   });
 }
 
-async function outputJSON(dbQuery, router) {
+async function outputJSON(dbQuery) {
   try {
     const results = await runQuery(dbQuery);
-    router.get('/', (req, res) => {
-      res.json({ results: results[0] });
-    });
     return results;
   } catch (error) {
     console.error('Fout bij het uitvoeren van de query: ', error);
-    router.get('/', (req, res) => {
-      res.status(500).json({ error: 'An error occurred' });
-    });
+    throw error; // Re-throw the error to be caught by the caller
   }
 }
 
-
-function outputXML(dbQuery, router) {
-  runQuery(dbQuery, function(results, error) {
-    router.get('/', function(req, res) {
-      res.set('Content-Type', 'text/xml');
-      if (error) {
+function outputXML(dbQuery) {
+  return new Promise((resolve, reject) => {
+    runQuery(dbQuery)
+      .then((results) => {
+        resolve(xml({ results: results[0] }));
+      })
+      .catch((error) => {
         console.error('Fout bij het uitvoeren van de query: ', error);
-        res.status(500).send(xml({ error: 'An error occurred' })); // Sending error as XML response
-      } else {
-        res.send(xml({ results:results[0] })); // Sending results as XML response
-      }
-    });
+        reject(error);
+      });
   });
-};
+}
 
-module.exports = {outputXML, outputJSON};
+module.exports = { outputXML, outputJSON };

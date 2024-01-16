@@ -16,6 +16,13 @@ var registerRouter = require('./routes/register');
 
 // Movie routes
 var movieListRouter = require('./routes/movie/movielist');
+var movieCounterRouter = require('./routes/movie/movie-counter');
+
+// Serie routes
+var serieListRouter = require('./routes/serie/serielist');
+
+// Genre routes
+var genreListRouter = require('./routes/genre/genrelist');
 
 var app = express();
 
@@ -42,6 +49,13 @@ app.use("/register", registerRouter);
 
 // Movie use
 app.use("/movie/movielist", movieListRouter);
+app.use("/movie/movie-counter", movieCounterRouter);
+
+// Serie use
+app.use("/serie/serielist", serieListRouter);
+
+// Genre use
+app.use("/genre/genrelist", genreListRouter);
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {

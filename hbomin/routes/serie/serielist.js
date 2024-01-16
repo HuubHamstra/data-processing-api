@@ -3,7 +3,7 @@ const router = express.Router();
 const query = require('../../query');
 
 router.get('/', async (req, res) => {
-  const dbQuery = `SELECT * FROM movie`;
+  const dbQuery = `SELECT * FROM series`;
 
   try {
     const results = await query.outputJSON(dbQuery);

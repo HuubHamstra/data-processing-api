@@ -24,6 +24,10 @@ var serieListRouter = require('./routes/serie/serielist');
 // Genre routes
 var genreListRouter = require('./routes/genre/genrelist');
 
+// Finance routes
+var dailyIncomeRouter = require('./routes/finance/get_daily_income')
+
+
 var app = express();
 
 app.use(cors({ origin: 'http://localhost:4200', credentials: true }));
@@ -56,6 +60,9 @@ app.use("/serie/serielist", serieListRouter);
 
 // Genre use
 app.use("/genre/genrelist", genreListRouter);
+
+// Finance use
+app.use("/finance/daily-income", dailyIncomeRouter);
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {

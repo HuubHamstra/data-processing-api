@@ -838,3 +838,11 @@ BEGIN
 END; //
 DELIMITER ;
 GRANT EXECUTE ON PROCEDURE update_viewer_guide_medior TO medior, senior;
+
+DELIMITER //
+CREATE PROCEDURE get_movie_count()
+BEGIN
+  SELECT COUNT(movie_id) AS movie_count FROM movie;
+END; //
+DELIMITER ;
+GRANT EXECUTE ON PROCEDURE get_movie_count TO medior, senior;

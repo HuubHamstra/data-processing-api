@@ -16,9 +16,7 @@ router.post('/', async (req, res) => {
 
     if (login_data && login_data[0] && login_data[0][0]) {
       const received_password = login_data[0][0].password;
-      console.log(received_password);
       verifyPassword(password, received_password).then((is_match) => {
-        console.log(is_match);
         if (is_match) {
           // Generate JWT token upon successful login
           const accessToken = jwt.sign({ email }, secretKey, {

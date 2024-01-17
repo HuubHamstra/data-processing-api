@@ -846,3 +846,17 @@ BEGIN
 END; //
 DELIMITER ;
 GRANT EXECUTE ON PROCEDURE get_movie_count TO medior, senior;
+
+DELIMITER //
+CREATE PROCEDURE get_total_income()
+BEGIN
+  DECLARE total_income DECIMAL(10, 2) DEFAULT 0.0;
+  
+  SELECT SUM(subscription.subscription_price) INTO total_income
+  FROM subscription
+  JOIN subscription_record ON subscription.subscription_id = subscription_record.subscription_id;
+  
+  SELECT total_income AS total_subscription_income;
+END; //
+DELIMITER ;
+GRANT EXECUTE ON PROCEDURE get_total_income TO senior;

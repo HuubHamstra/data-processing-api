@@ -3,7 +3,7 @@ var router = express.Router();
 var query = require('../../query');
 
 router.get('/', async (req, res) => {
-    const dbQuery = `CALL get_daily_income(NOW())`;
+    const dbQuery = `CALL get_total_income()`;
   
     try {
       const results = await query.outputJSON(dbQuery);

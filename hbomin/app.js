@@ -27,7 +27,8 @@ var serieTableRouter = require('./routes/serie/serietable');
 var genreListRouter = require('./routes/genre/genrelist');
 
 // Finance routes
-var dailyIncomeRouter = require('./routes/finance/get_daily_income')
+var dailyIncomeRouter = require('./routes/finance/get_daily_income');
+var totalIncomeRouter = require('./routes/finance/get_total_income');
 
 
 var app = express();
@@ -67,6 +68,7 @@ app.use("/genre/genrelist", genreListRouter);
 
 // Finance use
 app.use("/finance/daily-income", dailyIncomeRouter);
+app.use("/finance/total-income", totalIncomeRouter);
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {

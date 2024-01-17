@@ -7,7 +7,7 @@ router.get('/', async (req, res) => {
 
   try {
     const results = await query.outputJSON(dbQuery);
-    res.json({ results: results[0] });
+    res.json({ results: results });
   } catch (error) {
     console.error('Fout bij het uitvoeren van de query: ', error);
     res.status(500).json({ error: 'An error occurred' });

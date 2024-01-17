@@ -21,6 +21,7 @@ var movieTableRouter = require('./routes/movie/movietable');
 
 // Serie routes
 var serieListRouter = require('./routes/serie/serielist');
+var serieTableRouter = require('./routes/serie/serietable');
 
 // Genre routes
 var genreListRouter = require('./routes/genre/genrelist');
@@ -59,6 +60,7 @@ app.use("/movie/movietable", movieTableRouter);
 
 // Serie use
 app.use("/serie/serielist", serieListRouter);
+app.use("/serie/serietable", serieTableRouter);
 
 // Genre use
 app.use("/genre/genrelist", genreListRouter);

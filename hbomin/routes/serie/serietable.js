@@ -3,7 +3,7 @@ const router = express.Router();
 const query = require('../../query');
 
 router.get('/', async (req, res) => {
-  const dbQuery = `SELECT * FROM series`;
+  const dbQuery = `SELECT series.name, series.description, genre.title as genre_title FROM series JOIN genre on series.genre_id = genre.genre_id;`;
 
   try {
     const results = await query.outputJSON(dbQuery);

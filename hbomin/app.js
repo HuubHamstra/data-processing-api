@@ -17,6 +17,7 @@ var registerRouter = require('./routes/register');
 // Movie routes
 var movieListRouter = require('./routes/movie/movielist');
 var movieCounterRouter = require('./routes/movie/movie-counter');
+var movieTableRouter = require('./routes/movie/movietable');
 
 // Serie routes
 var serieListRouter = require('./routes/serie/serielist');
@@ -54,6 +55,7 @@ app.use("/register", registerRouter);
 // Movie use
 app.use("/movie/movielist", movieListRouter);
 app.use("/movie/movie-counter", movieCounterRouter);
+app.use("/movie/movietable", movieTableRouter);
 
 // Serie use
 app.use("/serie/serielist", serieListRouter);

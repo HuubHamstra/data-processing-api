@@ -3,7 +3,7 @@ const router = express.Router();
 const query = require('../query');
 
 router.get('/', async (req, res) => {
-    const dbQuery = `SELECT account_id AS id, first_name AS firstname, last_name AS lastname, email, payment_method AS subscription FROM account`;
+    const dbQuery = `SELECT account_id AS id, first_name AS firstname, last_name AS lastname, email, email_validated, payment_method AS subscription FROM account`;
 
     try {
         const results = await query.outputJSON(dbQuery);

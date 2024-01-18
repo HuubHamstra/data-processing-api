@@ -1,5 +1,5 @@
 var connection = require('./database');
-var xml = require('xml');
+const xml2js = require('xml2js');
 
 function runQuery(dbQuery) {
   return new Promise((resolve, reject) => {
@@ -13,6 +13,15 @@ function runQuery(dbQuery) {
   });
 }
 
+async function run(dbQuery, isJSON = true) {
+  if (isJSON) {
+    return await outputJSON(dbQuery);
+  }
+  else {
+    return await outputXML(dbQuery);
+  }
+}
+
 async function outputJSON(dbQuery) {
   try {
     const results = await runQuery(dbQuery);
@@ -23,17 +32,18 @@ async function outputJSON(dbQuery) {
   }
 }
 
-function outputXML(dbQuery) {
-  return new Promise((resolve, reject) => {
-    runQuery(dbQuery)
-      .then((results) => {
-        resolve(xml({ results: results[0] }));
-      })
-      .catch((error) => {
-        console.error('Fout bij het uitvoeren van de query: ', error);
-        reject(error);
-      });
-  });
+
+async function outputXML(dbQuery) {
+  try {
+    const results = await runQuery(dbQuery);
+    const xmlBuilder = new xml2js.Builder();
+    const xmlString = xmlBuilder.buildObject({ results: results });
+    return xmlString;
+  } catch (error) {
+    console.error('Fout bij het uitvoeren van de query: ', error);
+    throw error; // Re-throw the error to be caught by the caller
+  }
 }
 
-module.exports = { outputXML, outputJSON };
+
+module.exports = { run, outputXML, outputJSON };

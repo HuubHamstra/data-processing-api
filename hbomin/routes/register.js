@@ -8,6 +8,8 @@ const { secretKey, refreshTokens } = require('./config'); // Import shared confi
 
 router.post('/', async (req, res) => {
   const body = req.body;
+  const accept = body["accept"];
+  const xmlResponse = accept?.includes('application/xml') || null;
   const full_name = body["fullname"];
   const email = body["email"];
   const password = body["password"];
@@ -17,7 +19,8 @@ router.post('/', async (req, res) => {
 
   try {
     hashPassword(password).then(async hashed_password => {
-      let login_data = await query.outputJSON(`CALL create_account('${first_name}', '${last_name}', '${email}','${hashed_password}', 0, 0, 'profile name', 'profile image', 18, 0, 0, 0, 0);`, res);
+      const dbQuery = `CALL create_account('${first_name}', '${last_name}', '${email}','${hashed_password}', 0, 0, 'profile name', 'profile image', 18, 0, 0, 0, 0);`;
+      let login_data = await query.run(dbQuery, !xmlResponse, res);
 
       if (login_data && login_data instanceof Object && login_data.constructor.name === 'OkPacket') {
         // Generate JWT token upon successful login
@@ -28,16 +31,16 @@ router.post('/', async (req, res) => {
         // Generate and store refresh token
         const refreshToken = generateRefreshToken();
         refreshTokens[email] = refreshToken;
-        res.json({ accessToken, refreshToken });
+        res.send({ accessToken, refreshToken });
       }
     })
       .catch(err => {
         console.error('Error hashing password:', err);
-        res.status(500).json({ message: 'Internal Server Error' });
+        res.status(500).send({ message: 'Internal Server Error' });
       });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ message: 'Internal Server Error' });
+    res.status(500).send({ message: 'Internal Server Error' });
   }
 });
 

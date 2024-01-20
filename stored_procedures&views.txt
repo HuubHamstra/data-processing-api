@@ -20,7 +20,6 @@ BEGIN
   DECLARE EXIT HANDLER FOR SQLEXCEPTION
   BEGIN  
     ROLLBACK;
-    SELECT "Error: Account creation failed.";
   END;
 
   SET TRANSACTION ISOLATION LEVEL SERIALIZABLE;
@@ -39,14 +38,14 @@ BEGIN
   CALL change_subscription(new_account_id, user_subscription_id);
   CALL create_profile(new_account_id, user_profile_name, user_profile_image, user_profile_age, user_language_id, user_view_movies, user_view_series, user_min_age);
   
-  IF @affected_rows > 0 THEN
+  IF ROW_COUNT() > 0 THEN
     CALL change_subscription(new_account_id, user_subscription_id);
     CALL create_profile(new_account_id, user_profile_name, user_profile_image, user_profile_age, user_language_id, user_view_movies, user_view_series, user_min_age);
 
     COMMIT;
     INSERT INTO audit_log (event_type, event_description) VALUES ('AccountCreation', CONCAT('Account created for user ', user_email));
   ELSE
-    ROLLBACK;
+    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = "Error: Account creation failed.";
   END IF;
 END; //
 DELIMITER ;
@@ -66,7 +65,6 @@ BEGIN
   DECLARE EXIT HANDLER FOR SQLEXCEPTION
   BEGIN  
     ROLLBACK;
-    SELECT "Error: Profile creation failed.";
   END;
 
   SET TRANSACTION ISOLATION LEVEL SERIALIZABLE;
@@ -87,11 +85,11 @@ BEGIN
   EXECUTE stmt;
   DEALLOCATE PREPARE stmt;
 
-  IF @affected_rows > 0 THEN
+  IF ROW_COUNT() > 0 THEN
     COMMIT;
     INSERT INTO audit_log (event_type, event_description) VALUES ('ProfileCreation', CONCAT('Profile created: ', user_profile_name));
   ELSE
-    ROLLBACK;
+    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = "Error: Profile creation failed.";
   END IF;
 END; //
 DELIMITER ;
@@ -117,7 +115,6 @@ BEGIN
   DECLARE EXIT HANDLER FOR SQLEXCEPTION
   BEGIN  
     ROLLBACK;
-    SELECT "Error: Password update failed.";
   END;
 
   SET TRANSACTION ISOLATION LEVEL SERIALIZABLE;
@@ -128,11 +125,11 @@ BEGIN
   EXECUTE stmt;
   DEALLOCATE PREPARE stmt;
 
-  IF @affected_rows > 0 THEN
+  IF ROW_COUNT() > 0 THEN
     COMMIT;
     INSERT INTO audit_log (event_type, event_description) VALUES ('PasswordUpdate', CONCAT('Password updated: ', user_email));
   ELSE
-    ROLLBACK;
+    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = "Error: Password update failed.";
   END IF;
 END; //
 DELIMITER ;
@@ -145,7 +142,6 @@ BEGIN
   DECLARE EXIT HANDLER FOR SQLEXCEPTION
   BEGIN  
     ROLLBACK;
-    SELECT "Error: Email validation failed.";
   END;
 
   SET TRANSACTION ISOLATION LEVEL SERIALIZABLE;
@@ -155,11 +151,11 @@ BEGIN
   EXECUTE stmt;
   DEALLOCATE PREPARE stmt;
   
-  IF @affected_rows > 0 THEN
+  IF ROW_COUNT() > 0 THEN
     COMMIT;
     INSERT INTO audit_log (event_type, event_description) VALUES ('ValidateEmail', CONCAT('Email validated: ', user_email));
   ELSE
-    ROLLBACK;
+    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = "Error: Email validation failed.";
   END IF;
 END; //
 DELIMITER ;

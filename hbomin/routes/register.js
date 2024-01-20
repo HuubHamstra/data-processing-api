@@ -19,7 +19,7 @@ router.post('/', async (req, res) => {
 
   try {
     hashPassword(password).then(async hashed_password => {
-      const dbQuery = `CALL create_account('${first_name}', '${last_name}', '${email}','${hashed_password}', 0, 0, 'profile name', 'profile image', 18, 0, 0, 0, 0);`;
+      const dbQuery = `CALL create_account('${first_name}', '${last_name}', '${email}','${hashed_password}', 0, 0, 'profile name', 'profile image', 18, 1, 0, 0, 0);`;
       let login_data = await query.run(dbQuery, !xmlResponse, res);
 
       if (login_data && login_data instanceof Object && login_data.constructor.name === 'OkPacket') {

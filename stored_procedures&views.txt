@@ -39,7 +39,7 @@ BEGIN
   CALL change_subscription(new_account_id, user_subscription_id);
   CALL create_profile(new_account_id, user_profile_name, user_profile_image, user_profile_age, user_language_id, user_view_movies, user_view_series, user_min_age);
   
-  IF @affected_rows = 1 THEN
+  IF @affected_rows > 0 THEN
     CALL change_subscription(new_account_id, user_subscription_id);
     CALL create_profile(new_account_id, user_profile_name, user_profile_image, user_profile_age, user_language_id, user_view_movies, user_view_series, user_min_age);
 
@@ -87,7 +87,7 @@ BEGIN
   EXECUTE stmt;
   DEALLOCATE PREPARE stmt;
 
-  IF @affected_rows = 1 THEN
+  IF @affected_rows > 0 THEN
     COMMIT;
     INSERT INTO audit_log (event_type, event_description) VALUES ('ProfileCreation', CONCAT('Profile created: ', user_profile_name));
   ELSE
@@ -114,21 +114,23 @@ CREATE PROCEDURE update_login_data(
   IN user_password VARCHAR(255)
 )
 BEGIN
-  DECLARE commit_update BOOLEAN DEFAULT TRUE;
-  DECLARE EXIT HANDLER FOR SQLEXCEPTION, NOT FOUND, SQLWARNING
-  BEGIN
+  DECLARE EXIT HANDLER FOR SQLEXCEPTION
+  BEGIN  
     ROLLBACK;
+    SELECT "Error: Password update failed.";
   END;
-  START TRANSACTION;
 
-  UPDATE account SET password = user_password WHERE email = user_email;
-  
-  IF ROW_COUNT() = 0 THEN
-    SET commit_update = FALSE;
-  END IF;
+  SET TRANSACTION ISOLATION LEVEL SERIALIZABLE;
 
-  IF commit_update THEN
+  SET @user_email = user_email;
+  SET @user_password = user_password;
+  PREPARE stmt FROM 'UPDATE account SET password = @user_password WHERE email = @user_email;';
+  EXECUTE stmt;
+  DEALLOCATE PREPARE stmt;
+
+  IF @affected_rows > 0 THEN
     COMMIT;
+    INSERT INTO audit_log (event_type, event_description) VALUES ('PasswordUpdate', CONCAT('Password updated: ', user_email));
   ELSE
     ROLLBACK;
   END IF;
@@ -140,21 +142,22 @@ CREATE PROCEDURE validate_email(
   IN user_email VARCHAR(255)
 )
 BEGIN
-  DECLARE commit_update BOOLEAN DEFAULT TRUE;
-  DECLARE EXIT HANDLER FOR SQLEXCEPTION, NOT FOUND, SQLWARNING
-  BEGIN
+  DECLARE EXIT HANDLER FOR SQLEXCEPTION
+  BEGIN  
     ROLLBACK;
+    SELECT "Error: Email validation failed.";
   END;
-  START TRANSACTION;
 
-  UPDATE account SET email_validated = true WHERE email = user_email;
+  SET TRANSACTION ISOLATION LEVEL SERIALIZABLE;
+
+  SET @user_email = user_email;  
+  PREPARE stmt FROM 'UPDATE account SET email_validated = true WHERE email = @user_email;';
+  EXECUTE stmt;
+  DEALLOCATE PREPARE stmt;
   
-  IF ROW_COUNT() = 0 THEN
-    SET commit_update = FALSE;
-  END IF;
-
-  IF commit_update THEN
+  IF @affected_rows > 0 THEN
     COMMIT;
+    INSERT INTO audit_log (event_type, event_description) VALUES ('ValidateEmail', CONCAT('Email validated: ', user_email));
   ELSE
     ROLLBACK;
   END IF;

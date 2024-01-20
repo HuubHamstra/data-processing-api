@@ -13,6 +13,7 @@ var refreshRouter = require('./routes/refresh-token');
 
 //Account
 var registerRouter = require('./routes/register');
+var createProfileRouter = require('./routes/account/create-profile');
 
 // Movie routes
 var movieListRouter = require('./routes/movie/movielist');
@@ -53,6 +54,7 @@ app.use('/users', usersRouter);
 
 // Account Use
 app.use("/register", registerRouter);
+app.use("/account/create_profile", createProfileRouter);
 
 // Movie use
 app.use("/movie/movielist", movieListRouter);

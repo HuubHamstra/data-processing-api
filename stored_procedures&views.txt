@@ -15,27 +15,37 @@ CREATE PROCEDURE create_account(
   IN user_min_age INT(11)
 )
 BEGIN
-  DECLARE commit_insert BOOLEAN DEFAULT TRUE;
   DECLARE new_account_id INT;
 
-  DECLARE EXIT HANDLER FOR SQLEXCEPTION, NOT FOUND, SQLWARNING
+  DECLARE EXIT HANDLER FOR SQLEXCEPTION
   BEGIN  
     ROLLBACK;
   END;
-  
-  INSERT INTO account (first_name, last_name, email, password, payment_method, blocked_end_time, email_validated) VALUES (user_first_name, user_last_name, user_email, user_password, user_payment_method, MAKEDATE(1970,365), false);
+
+  SET TRANSACTION ISOLATION LEVEL SERIALIZABLE;
+
+  SET @user_first_name = user_first_name;
+  SET @user_last_name = user_last_name;
+  SET @user_email = user_email;
+  SET @hashed_password = user_password;
+  SET @user_payment_method = user_payment_method;
+  PREPARE stmt FROM 'INSERT INTO account (first_name, last_name, email, password, payment_method, blocked_end_time, email_validated) VALUES (@user_first_name, @user_last_name, @user_email, @hashed_password, @user_payment_method, CURDATE(), false)';
+  EXECUTE stmt;
+  DEALLOCATE PREPARE stmt;
+
   SET new_account_id = LAST_INSERT_ID();
+
   CALL change_subscription(new_account_id, user_subscription_id);
   CALL create_profile(new_account_id, user_profile_name, user_profile_image, user_profile_age, user_language_id, user_view_movies, user_view_series, user_min_age);
   
-  IF ROW_COUNT() = 0 THEN
-    SET commit_insert = FALSE;
-  END IF;
+  IF ROW_COUNT() > 0 THEN
+    CALL change_subscription(new_account_id, user_subscription_id);
+    CALL create_profile(new_account_id, user_profile_name, user_profile_image, user_profile_age, user_language_id, user_view_movies, user_view_series, user_min_age);
 
-  IF commit_insert THEN
     COMMIT;
+    INSERT INTO audit_log (event_type, event_description) VALUES ('AccountCreation', CONCAT('Account created for user ', user_email));
   ELSE
-    ROLLBACK;
+    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = "Error: Account creation failed.";
   END IF;
 END; //
 DELIMITER ;
@@ -52,24 +62,34 @@ CREATE PROCEDURE create_profile(
   IN user_min_age INT(11)
 )
 BEGIN
-  DECLARE commit_insert BOOLEAN DEFAULT TRUE;
-  DECLARE EXIT HANDLER FOR SQLEXCEPTION, NOT FOUND, SQLWARNING
-  BEGIN
+  DECLARE EXIT HANDLER FOR SQLEXCEPTION
+  BEGIN  
     ROLLBACK;
   END;
-  START TRANSACTION;
 
-  INSERT INTO preference (view_movies, view_series, min_age) VALUES (user_view_movies, user_view_series, user_min_age);
-  INSERT INTO profile (account_id, profile_name, profile_image, profile_age, language_id, preference_id) VALUES (user_account_id, user_profile_name, user_profile_image, user_profile_age, user_language_id, LAST_INSERT_ID());
-  
-  IF ROW_COUNT() = 0 THEN
-    SET commit_insert = FALSE;
-  END IF;
+  SET TRANSACTION ISOLATION LEVEL SERIALIZABLE;
 
-  IF commit_insert THEN
+  SET @user_view_movies = user_view_movies;
+  SET @user_view_series = user_view_series;
+  SET @user_min_age = user_min_age;
+  PREPARE pref_stmt FROM 'INSERT INTO preference (view_movies, view_series, min_age) VALUES (@user_view_movies, @user_view_series, @user_min_age);';
+  EXECUTE pref_stmt;
+  DEALLOCATE PREPARE pref_stmt;
+
+  SET @user_account_id = user_account_id;
+  SET @user_profile_name = user_profile_name;
+  SET @user_profile_image = user_profile_image;
+  SET @user_profile_age = user_profile_age;
+  SET @user_language_id = user_language_id;
+  PREPARE stmt FROM 'INSERT INTO profile (account_id, profile_name, profile_image, profile_age, language_id, preference_id) VALUES (@user_account_id, @user_profile_name, @user_profile_image, @user_profile_age, @user_language_id, LAST_INSERT_ID());';
+  EXECUTE stmt;
+  DEALLOCATE PREPARE stmt;
+
+  IF ROW_COUNT() > 0 THEN
     COMMIT;
+    INSERT INTO audit_log (event_type, event_description) VALUES ('ProfileCreation', CONCAT('Profile created: ', user_profile_name));
   ELSE
-    ROLLBACK;
+    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = "Error: Profile creation failed.";
   END IF;
 END; //
 DELIMITER ;
@@ -92,23 +112,24 @@ CREATE PROCEDURE update_login_data(
   IN user_password VARCHAR(255)
 )
 BEGIN
-  DECLARE commit_update BOOLEAN DEFAULT TRUE;
-  DECLARE EXIT HANDLER FOR SQLEXCEPTION, NOT FOUND, SQLWARNING
-  BEGIN
+  DECLARE EXIT HANDLER FOR SQLEXCEPTION
+  BEGIN  
     ROLLBACK;
   END;
-  START TRANSACTION;
 
-  UPDATE account SET password = user_password WHERE email = user_email;
-  
-  IF ROW_COUNT() = 0 THEN
-    SET commit_update = FALSE;
-  END IF;
+  SET TRANSACTION ISOLATION LEVEL SERIALIZABLE;
 
-  IF commit_update THEN
+  SET @user_email = user_email;
+  SET @user_password = user_password;
+  PREPARE stmt FROM 'UPDATE account SET password = @user_password WHERE email = @user_email;';
+  EXECUTE stmt;
+  DEALLOCATE PREPARE stmt;
+
+  IF ROW_COUNT() > 0 THEN
     COMMIT;
+    INSERT INTO audit_log (event_type, event_description) VALUES ('PasswordUpdate', CONCAT('Password updated: ', user_email));
   ELSE
-    ROLLBACK;
+    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = "Error: Password update failed.";
   END IF;
 END; //
 DELIMITER ;
@@ -118,23 +139,23 @@ CREATE PROCEDURE validate_email(
   IN user_email VARCHAR(255)
 )
 BEGIN
-  DECLARE commit_update BOOLEAN DEFAULT TRUE;
-  DECLARE EXIT HANDLER FOR SQLEXCEPTION, NOT FOUND, SQLWARNING
-  BEGIN
+  DECLARE EXIT HANDLER FOR SQLEXCEPTION
+  BEGIN  
     ROLLBACK;
   END;
-  START TRANSACTION;
 
-  UPDATE account SET email_validated = true WHERE email = user_email;
+  SET TRANSACTION ISOLATION LEVEL SERIALIZABLE;
+
+  SET @user_email = user_email;  
+  PREPARE stmt FROM 'UPDATE account SET email_validated = true WHERE email = @user_email;';
+  EXECUTE stmt;
+  DEALLOCATE PREPARE stmt;
   
-  IF ROW_COUNT() = 0 THEN
-    SET commit_update = FALSE;
-  END IF;
-
-  IF commit_update THEN
+  IF ROW_COUNT() > 0 THEN
     COMMIT;
+    INSERT INTO audit_log (event_type, event_description) VALUES ('ValidateEmail', CONCAT('Email validated: ', user_email));
   ELSE
-    ROLLBACK;
+    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = "Error: Email validation failed.";
   END IF;
 END; //
 DELIMITER ;
@@ -419,6 +440,20 @@ BEGIN
 END; //
 DELIMITER ;
 GRANT EXECUTE ON PROCEDURE get_daily_income TO senior;
+
+DELIMITER //
+CREATE PROCEDURE get_total_income()
+BEGIN
+	DECLARE total_income DECIMAL(10, 2) DEFAULT 0.0;
+    
+    SELECT SUM(subscription.subscription_price) INTO total_income
+    FROM subscription
+    JOIN subscription_record ON subscription.subscription_id = subscription_record.subscription_id;
+    
+    SELECT total_income AS total_subscription_income;
+END; //
+DELIMITER ;
+GRANT EXECUTE ON PROCEDURE get_total_income TO senior;
 
 CREATE VIEW account_junior_view AS SELECT account_id, blocked_end_time, email_validated FROM account;
 GRANT SELECT ON account_junior_view TO junior, medior, senior;

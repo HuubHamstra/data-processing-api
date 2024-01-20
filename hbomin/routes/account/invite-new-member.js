@@ -13,7 +13,7 @@ router.post('/', async (req, res) => {
       text: `${url}`
     };
 
-    await mail.transporter.sendMail(mailOptions, function(error, info){
+    mail.transporter.sendMail(mailOptions, function (error, info) {
       if (error) {
         console.error('Error sending email:', error);
         res.status(500).send('Internal Server Error');

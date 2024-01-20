@@ -4,6 +4,7 @@ const query = require('../query');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
+const mail = require('../mail-transporter');
 const { secretKey, refreshTokens } = require('./config'); // Import shared configurations
 
 router.post('/', async (req, res) => {
@@ -31,7 +32,26 @@ router.post('/', async (req, res) => {
         // Generate and store refresh token
         const refreshToken = generateRefreshToken();
         refreshTokens[email] = refreshToken;
-        res.send({ accessToken, refreshToken });
+
+        // Send validation email
+        const url = req.protocol + '://' + req.get('host');
+        
+        const mailOptions = {
+          from: 'hbomin.api@gmail.com',
+          to: email,
+          subject: `Valideer uw E-Mail adres voor HBO-Min`,
+          text: `Validatie E-Mail URL: ${url}/account/verify-email?token=${accessToken}`
+        };
+    
+        mail.transporter.sendMail(mailOptions, function (error, info) {
+          if (error) {
+            console.error('Error sending email:', error);
+            res.status(500).send('Internal Server Error');
+          }
+          else {
+            res.status(200).send({ accessToken, refreshToken });
+          }
+        });
       }
     })
       .catch(err => {

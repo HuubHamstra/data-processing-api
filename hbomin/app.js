@@ -15,6 +15,7 @@ var refreshRouter = require('./routes/refresh-token');
 var registerRouter = require('./routes/register');
 var createProfileRouter = require('./routes/account/create-profile');
 var inviteMemberRouter = require('./routes/account/invite-new-member');
+var verifyEmailRouter = require('./routes/account/verify-email');
 
 // Movie routes
 var movieListRouter = require('./routes/movie/movielist');
@@ -57,6 +58,7 @@ app.use('/users', usersRouter);
 app.use("/register", registerRouter);
 app.use("/account/create-profile", createProfileRouter);
 app.use("/account/invite-new-member", inviteMemberRouter);
+app.use("/account/verify-email", verifyEmailRouter);
 
 // Movie use
 app.use("/movie/movielist", movieListRouter);

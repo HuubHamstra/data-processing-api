@@ -20,6 +20,7 @@ var verifyEmailRouter = require('./routes/account/verify-email');
 var resetPasswordRouter = require('./routes/account/reset-password');
 
 // Movie routes
+var movieStopRouter = require('./routes/movie/stop-movie');
 var movieListRouter = require('./routes/movie/movielist');
 var movieCounterRouter = require('./routes/movie/movie-counter');
 var movieTableRouter = require('./routes/movie/movietable');
@@ -27,6 +28,13 @@ var movieTableRouter = require('./routes/movie/movietable');
 // Serie routes
 var serieListRouter = require('./routes/serie/serielist');
 var serieTableRouter = require('./routes/serie/serietable');
+
+// Subscription routes
+var subscriptionUpdateRouter = require('./routes/subscription/update-subscription');
+
+// Watchlist routes
+var watchlistGetRouter = require('./routes/watchlist/get-watchlist');
+var watchlistUpdateRouter = require('./routes/watchlist/update-watchlist');
 
 // Genre routes
 var genreListRouter = require('./routes/genre/genrelist');
@@ -65,6 +73,7 @@ app.use("/account/verify-email", verifyEmailRouter);
 app.use("/account/reset-password", resetPasswordRouter);
 
 // Movie use
+app.use("/movie/stop-movie", movieStopRouter);
 app.use("/movie/movielist", movieListRouter);
 app.use("/movie/movie-counter", movieCounterRouter);
 app.use("/movie/movietable", movieTableRouter);
@@ -72,6 +81,13 @@ app.use("/movie/movietable", movieTableRouter);
 // Serie use
 app.use("/serie/serielist", serieListRouter);
 app.use("/serie/serietable", serieTableRouter);
+
+// Subscription use
+app.use("/subscription/update-subscription", subscriptionUpdateRouter);
+
+// Watchlist use
+app.use("/watchlist/get-watchlist", watchlistGetRouter);
+app.use("/watchlist/update-watchlist", watchlistUpdateRouter);
 
 // Genre use
 app.use("/genre/genrelist", genreListRouter);

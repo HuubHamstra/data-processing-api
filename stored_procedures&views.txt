@@ -567,7 +567,7 @@ GRANT SELECT ON episode_viewer_guide_view TO junior, medior, senior;
 CREATE VIEW viewer_guide_view as SELECT * FROM viewer_guide;
 GRANT SELECT ON viewer_guide_view TO junior, medior, senior;
 
-CREATE VIEW watchlist_view as SELECT * FROM watchlist;
+CREATE VIEW watchlist_view as SELECT watchlist.watchlist_id, watchlist.profile_id, watchlist.movie_id, movie.title AS movie_title, watchlist.series_id AS series_id, series.name AS series_title FROM watchlist LEFT JOIN movie ON watchlist.movie_id = movie.movie_id LEFT JOIN series ON watchlist.series_id = series.series_id;
 GRANT SELECT ON watchlist_view TO junior, medior, senior;
 
 CREATE VIEW definition_type_view as SELECT * FROM definition_type;

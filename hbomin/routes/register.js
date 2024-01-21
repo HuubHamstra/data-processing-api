@@ -27,6 +27,11 @@ router.post('/', async (req, res) => {
   const viewSeries = body["viewSeries"] || 1;
   const minAge = body["viewSeries"] || profileAge;
 
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!email || !email.match(emailRegex)) {
+    return res.status(400).send({ message: 'Invalid email format' });
+  }
+
   try {
     hashPassword(password).then(async hashed_password => {
       const dbQuery = `CALL create_account('${first_name}', '${last_name}', '${email}','${hashed_password}', ${paymentMethod}, ${subscription}, '${profileName}', '${profileImage}', ${profileAge}, ${language}, ${viewMovies}, ${viewSeries}, ${minAge});`;

@@ -17,10 +17,19 @@ router.post('/', async (req, res) => {
   const split = splitFullName(full_name);
   const first_name = split["firstName"];
   const last_name = split["lastName"];
+  const paymentMethod = body["paymentMethod"] || 0;
+  const subscription = body["subscription"] || 0;
+  const profileName = body["profileName"] || "Mijn Profiel";
+  const profileImage = body["profileImage"] || "";
+  const profileAge = body["profileAge"] || 0;
+  const language = body["language"] || 0;
+  const viewMovies = body["viewMovies"] || 1;
+  const viewSeries = body["viewSeries"] || 1;
+  const minAge = body["viewSeries"] || profileAge;
 
   try {
     hashPassword(password).then(async hashed_password => {
-      const dbQuery = `CALL create_account('${first_name}', '${last_name}', '${email}','${hashed_password}', 0, 0, 'profile name', 'profile image', 18, 1, 0, 0, 0);`;
+      const dbQuery = `CALL create_account('${first_name}', '${last_name}', '${email}','${hashed_password}', ${paymentMethod}, ${subscription}, '${profileName}', '${profileImage}', ${profileAge}, ${language}, ${viewMovies}, ${viewSeries}, ${minAge});`;
       let login_data = await query.run(dbQuery, !xmlResponse, res);
 
       if (login_data && login_data instanceof Object && login_data.constructor.name === 'OkPacket') {

@@ -17,7 +17,7 @@ async function authenticateToken(token) {
     return user;
   }
   catch (err) {
-    console.error(error);
+    console.error(err);
     return 403;
   }
 }

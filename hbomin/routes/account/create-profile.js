@@ -4,9 +4,13 @@ const query = require('../../query');
 
 // Handle POST request for login
 router.post('/', async (req, res) => {
-  const { accountId, profileName, profileImage, age, accept } = req.body;
+  var { accountId, profileName, profileImage, age, language, viewMovies, viewSeries, minAge, accept } = req.body;
+  language = language ?? 0;
+  viewMovies = viewMovies ?? 1;
+  viewSeries = viewSeries ?? 1;
+  minAge = minAge ?? age;
   const xmlResponse = accept?.includes('application/xml') || null;
-  const dbQuery = `CALL create_profile(${accountId}, '${profileName}', '${profileImage}', ${age}, 1, 1, 1, 1);`;
+  const dbQuery = `CALL create_profile(${accountId}, '${profileName}', '${profileImage}', ${age}, ${language}, ${viewMovies}, ${viewSeries}, ${minAge});`;
 
   try {
     let profile = await query.run(dbQuery, !xmlResponse, res);

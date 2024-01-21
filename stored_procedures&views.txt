@@ -171,13 +171,12 @@ CREATE PROCEDURE update_profile(
   IN update_age BOOLEAN
 )
 BEGIN
-  DECLARE commit_update BOOLEAN DEFAULT TRUE;
-  DECLARE update_query VARCHAR(1000);
-  DECLARE EXIT HANDLER FOR SQLEXCEPTION, NOT FOUND, SQLWARNING
-  BEGIN
+  DECLARE EXIT HANDLER FOR SQLEXCEPTION
+  BEGIN  
     ROLLBACK;
   END;
-  START TRANSACTION;
+
+  SET TRANSACTION ISOLATION LEVEL SERIALIZABLE;
 
   SET update_query = 'UPDATE profile SET ';
 
@@ -207,14 +206,11 @@ BEGIN
   EXECUTE stmt;
   DEALLOCATE PREPARE stmt;
   
-  IF ROW_COUNT() = 0 THEN
-    SET commit_update = FALSE;
-  END IF;
-
-  IF commit_update THEN
+  IF ROW_COUNT() > 0 THEN
     COMMIT;
+    INSERT INTO audit_log (event_type, event_description) VALUES ('UpdateProfile', CONCAT('Profile updated: ', user_account_id));
   ELSE
-    ROLLBACK;
+    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = "Error: Update profile failed.";
   END IF;
 END; //
 DELIMITER ;

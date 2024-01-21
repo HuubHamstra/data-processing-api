@@ -14,6 +14,7 @@ var refreshRouter = require('./routes/refresh-token');
 //Account
 var registerRouter = require('./routes/register');
 var createProfileRouter = require('./routes/account/create-profile');
+var updateProfileRouter = require('./routes/account/update-profile');
 var inviteMemberRouter = require('./routes/account/invite-new-member');
 var verifyEmailRouter = require('./routes/account/verify-email');
 var resetPasswordRouter = require('./routes/account/reset-password');
@@ -58,6 +59,7 @@ app.use('/users', usersRouter);
 // Account Use
 app.use("/register", registerRouter);
 app.use("/account/create-profile", createProfileRouter);
+app.use("/account/update-profile", updateProfileRouter);
 app.use("/account/invite-new-member", inviteMemberRouter);
 app.use("/account/verify-email", verifyEmailRouter);
 app.use("/account/reset-password", resetPasswordRouter);

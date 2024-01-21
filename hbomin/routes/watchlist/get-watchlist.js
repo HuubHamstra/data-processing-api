@@ -2,22 +2,20 @@ const express = require('express');
 const router = express.Router();
 const query = require('../../query');
 
-// Handle POST request for login
-router.post('/', async (req, res) => {
-  const { profileId, accept } = req.body;
-  const xmlResponse = accept?.includes('application/xml') || null;
-  const dbQuery = `SELECT * FROM watchlist_view WHERE profile_id = ${profileId};`;
+// Handle GET request for login
+router.get('/', async (req, res) => {
+  const dbQuery = `SELECT * FROM watchlist_view`;
+  const accept = req.headers.accept || 'application/json';
+  const xmlResponse = accept.includes('application/xml');
 
   try {
-    if (await query.run(dbQuery, !xmlResponse, res)) {
-      res.sendStatus(200);
-    } else {
-      res.status(400).send({ message: 'Invalid data' });
-    }
+    const results = await query.run(dbQuery, !xmlResponse);
+    res.send({ results: results });
   } catch (error) {
-    console.error(error);
-    res.status(500).send({ message: 'Internal Server Error' });
+    console.error('Fout bij het uitvoeren van de query: ', error);
+    res.status(500).send({ error: 'An error occurred' });
   }
 });
+
 
 module.exports = router;

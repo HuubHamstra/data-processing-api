@@ -4,20 +4,21 @@ const query = require('../../query');
 
 // Handle GET request for login
 router.get('/', async (req, res) => {
-  var { email, accept } = req.body;
+  const { email, accept } = req.query; // Use req.query for GET requests
   const xmlResponse = accept?.includes('application/xml') || null;
   const dbQuery = `CALL get_full_name('${email}');`;
 
   try {
-    let name = await query.run(dbQuery, !xmlResponse, res);
-
-    if (name) {
-      res.status(200).send({ name });
+    const result = await query.run(dbQuery, !xmlResponse);
+    
+    if (result && result[0] && result[0][0]) {
+      const { first_name, last_name } = result[0][0];
+      res.status(200).send({ first_name, last_name });
     } else {
       res.status(400).send({ message: 'Invalid data' });
     }
   } catch (error) {
-    console.error(error);
+    console.error('Error in GET /account/get-name:', error); // Log the error
     res.status(500).send({ message: 'Internal Server Error' });
   }
 });

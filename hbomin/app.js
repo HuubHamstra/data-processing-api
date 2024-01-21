@@ -18,6 +18,7 @@ var updateProfileRouter = require('./routes/account/update-profile');
 var inviteMemberRouter = require('./routes/account/invite-new-member');
 var verifyEmailRouter = require('./routes/account/verify-email');
 var resetPasswordRouter = require('./routes/account/reset-password');
+var getNameRouter = require('./routes/account/get-name');
 
 // Movie routes
 var movieStopRouter = require('./routes/movie/stop-movie');
@@ -71,6 +72,7 @@ app.use("/account/update-profile", updateProfileRouter);
 app.use("/account/invite-new-member", inviteMemberRouter);
 app.use("/account/verify-email", verifyEmailRouter);
 app.use("/account/reset-password", resetPasswordRouter);
+app.use("/account/get-name", getNameRouter);
 
 // Movie use
 app.use("/movie/stop-movie", movieStopRouter);

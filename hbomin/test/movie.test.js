@@ -27,7 +27,7 @@ describe('GET /movie/movielist', () => {
       expect(response.body.results).toBeInstanceOf(Array);
   
       // Check if the first movie title is present
-      const firstMovieTitle = 'Harry Potter'; // Replace with the actual expected title
+      const firstMovieTitle = 'Harry Potter'; 
       const firstMovieDuration = 500
       expect(response.body.results[0].title).toBe(firstMovieTitle);
       expect(response.body.results[0].duration).toBe(firstMovieDuration);

@@ -1,8 +1,13 @@
 const express = require('express');
 const router = express.Router();
 const mail = require('../../mail-transporter');
+const validator = require('../validator')
 
 router.post('/', async (req, res) => {
+  if (!validator.bodyValidation(req, res)) {
+    return;
+  }
+
   const { profileName, recipient, url } = req.body;
   
   try {
@@ -16,15 +21,15 @@ router.post('/', async (req, res) => {
     mail.transporter.sendMail(mailOptions, function (error, info) {
       if (error) {
         console.error('Error sending email:', error);
-        res.status(500).send('Internal Server Error');
+        res.status(500).send({ error: 'Internal Server Error'} );
       }
       else {
-        res.status(200).send('Email sent successfully');
+        res.status(200).send({ message: 'Email sent successfully'} );
       }
     });
   } catch (error) {
     console.error('Error sending email:', error);
-    res.status(500).send('Internal Server Error');
+    res.status(500).send({ error: 'Internal Server Error'} );
   }
 });
 

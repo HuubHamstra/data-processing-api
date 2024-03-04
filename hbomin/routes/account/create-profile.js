@@ -1,9 +1,14 @@
 const express = require('express');
 const router = express.Router();
+const validator = require('../validator')
 const query = require('../../query');
 
 // Handle POST request for login
 router.post('/', async (req, res) => {
+  if (!validator.bodyValidation(req, res)) {
+    return;
+  }
+
   var { accountId, profileName, profileImage, age, language, viewMovies, viewSeries, minAge, accept } = req.body;
   language = language ?? 0;
   viewMovies = viewMovies ?? 1;
@@ -18,11 +23,11 @@ router.post('/', async (req, res) => {
     if (profile) {
       res.status(200).send({ profile });
     } else {
-      res.status(400).send({ message: 'Invalid data' });
+      res.status(400).send({ error: 'Invalid data' });
     }
   } catch (error) {
     console.error(error);
-    res.status(500).send({ message: 'Internal Server Error' });
+    res.status(500).send({ error: 'Internal Server Error' });
   }
 });
 

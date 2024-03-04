@@ -15,11 +15,11 @@ router.get('/', async (req, res) => {
       const { first_name, last_name } = result[0][0];
       res.status(200).send({ first_name, last_name });
     } else {
-      res.status(400).send({ message: 'Invalid data' });
+      res.status(400).send({ error: 'Invalid data' });
     }
   } catch (error) {
     console.error('Error in GET /account/get-name:', error); // Log the error
-    res.status(500).send({ message: 'Internal Server Error' });
+    res.status(500).send({ error: 'Internal Server Error' });
   }
 });
 

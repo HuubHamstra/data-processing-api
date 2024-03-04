@@ -5,9 +5,14 @@ const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
 const mail = require('../mail-transporter');
+const validator = require('./validator')
 const { secretKey, refreshTokens } = require('./config'); // Import shared configurations
 
 router.post('/', async (req, res) => {
+  if (!validator.bodyValidation(req, res)) {
+    return;
+  }
+
   const body = req.body;
   const accept = body["accept"];
   const xmlResponse = accept?.includes('application/xml') || null;
@@ -29,7 +34,7 @@ router.post('/', async (req, res) => {
 
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   if (!email || !email.match(emailRegex)) {
-    return res.status(400).send({ message: 'Invalid email format' });
+    return res.status(400).send({ error: 'Invalid email format' });
   }
 
   try {
@@ -60,7 +65,7 @@ router.post('/', async (req, res) => {
         mail.transporter.sendMail(mailOptions, function (error, info) {
           if (error) {
             console.error('Error sending email:', error);
-            res.status(500).send('Internal Server Error');
+            res.status(500).send({ error: 'Internal Server Error' });
           }
           else {
             res.status(200).send({ accessToken, refreshToken });
@@ -70,11 +75,11 @@ router.post('/', async (req, res) => {
     })
       .catch(err => {
         console.error('Error hashing password:', err);
-        res.status(500).send({ message: 'Internal Server Error' });
+        res.status(500).send({ error: 'Internal Server Error' });
       });
   } catch (error) {
     console.error(error);
-    res.status(500).send({ message: 'Internal Server Error' });
+    res.status(500).send({ error: 'Internal Server Error' });
   }
 });
 

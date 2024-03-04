@@ -38,14 +38,14 @@ router.get('/', async (req, res) => {
         }
         catch {
           console.error(error);
-          res.status(500).send({ message: 'Internal Server Error' });
+          res.status(500).send({ error: 'Internal Server Error' });
         }
         res.status(200).send(email + " is geverifieerd.");
       }
     });
   }
   catch {
-    res.status(500).send({ message: 'Internal Server Error' });
+    res.status(500).send({ error: 'Internal Server Error' });
   }
 });
 

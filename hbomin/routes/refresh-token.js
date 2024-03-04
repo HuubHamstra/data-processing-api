@@ -1,10 +1,15 @@
 const express = require('express');
 const jwt = require('jsonwebtoken');
 const router = express.Router();
+const validator = require('./validator')
 const { secretKey, refreshTokens } = require('./config'); // Import shared configurations
 
 // Endpoint for refreshing the access token
 router.post('/', (req, res) => {
+  if (!validator.bodyValidation(req, res)) {
+    return;
+  }
+  
   const { email, refreshToken } = req.body;
 
   // Validate the refresh token

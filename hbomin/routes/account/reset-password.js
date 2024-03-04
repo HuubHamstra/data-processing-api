@@ -7,6 +7,7 @@ const { secretKey, refreshTokens } = require('../config'); // Import shared conf
 const query = require('../../query');
 const bcrypt = require('bcrypt');
 const crypto = require('crypto');
+const validator = require('../validator')
 
 async function authenticateToken(token) {
   if (token == null) {
@@ -47,6 +48,10 @@ function generateRefreshToken() {
 };
 
 router.post('/', async (req, res) => {
+  if (!validator.bodyValidation(req, res)) {
+    return;
+  }
+
   var { email, password } = req.body;
 
   let isGenerated = false;
@@ -78,7 +83,7 @@ router.post('/', async (req, res) => {
       mail.transporter.sendMail(mailOptions, function (error, info) {
         if (error) {
           console.error('Error sending email:', error);
-          res.status(500).send('Internal Server Error');
+          res.status(500).send({ error: 'Internal Server Error'} );
         }
         else {
           res.status(200).send({ accessToken, refreshToken });
@@ -87,11 +92,11 @@ router.post('/', async (req, res) => {
     })
       .catch(err => {
         console.error('Error hashing password:', err);
-        res.status(500).send({ message: 'Internal Server Error' });
+        res.status(500).send({ error: 'Internal Server Error' });
       });
   } catch (error) {
     console.error('Error sending email:', error);
-    res.status(500).send('Internal Server Error');
+    res.status(500).send({ error: 'Internal Server Error'} );
   }
 });
 
@@ -111,11 +116,11 @@ router.get('/', async (req, res) => {
         if (await query.run(dbQuery, true, res)) {
           res.sendStatus(200);
         } else {
-          res.status(400).send({ message: 'Invalid data' });
+          res.status(400).send({ error: 'Invalid data' });
         }
       } catch (error) {
         console.error(error);
-        res.status(500).send({ message: 'Internal Server Error' });
+        res.status(500).send({ error: 'Internal Server Error' });
       }
     }
   });

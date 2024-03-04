@@ -4,10 +4,15 @@ const query = require('../query');
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
 const bcrypt = require('bcrypt');
+const validator = require('./validator')
 const { secretKey, refreshTokens } = require('./config'); // Import shared configurations
 
 // Handle POST request for login
 router.post('/', async (req, res) => {
+  if (!validator.bodyValidation(req, res)) {
+    return;
+  }
+
   const { email, password, accept } = req.body;
   const xmlResponse = accept?.includes('application/xml') || null;
   const dbQuery = `CALL get_login_data('${email}')`;
@@ -29,18 +34,18 @@ router.post('/', async (req, res) => {
           refreshTokens[email] = refreshToken;
           res.send({ accessToken, refreshToken });
         } else {
-          res.status(401).send({ message: 'Invalid username or password' });
+          res.status(401).send({ error: 'Invalid username or password' });
         }
       })
       .catch(() => {
-        res.status(401).send({ message: 'Invalid username or password' });
+        res.status(401).send({ error: 'Invalid username or password' });
       });
     } else {
-      res.status(401).send({ message: 'Invalid username or password' });
+      res.status(401).send({ error: 'Invalid username or password' });
     }
   } catch (error) {
     console.error(error);
-    res.status(500).send({ message: 'Internal Server Error' });
+    res.status(500).send({ error: 'Internal Server Error' });
   }
 });
 

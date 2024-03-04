@@ -1,9 +1,14 @@
 const express = require('express');
 const router = express.Router();
 const query = require('../../query');
+const validator = require('../validator')
 
 // Handle POST request for login
 router.post('/', async (req, res) => {
+  if (!validator.bodyValidation(req, res)) {
+    return;
+  }
+
   const { accountId, profileName, profileImage, age, accept } = req.body;
   let update_name = typeof profileName !== 'undefined';
   let update_image = typeof profileImage !== 'undefined';
@@ -17,11 +22,11 @@ router.post('/', async (req, res) => {
     if (profile) {
       res.status(200).send({ profile });
     } else {
-      res.status(400).send({ message: 'Invalid data' });
+      res.status(400).send({ error: 'Invalid data' });
     }
   } catch (error) {
     console.error(error);
-    res.status(500).send({ message: 'Internal Server Error' });
+    res.status(500).send({ error: 'Internal Server Error' });
   }
 });
 

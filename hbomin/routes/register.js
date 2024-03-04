@@ -68,7 +68,7 @@ router.post('/', async (req, res) => {
             res.status(500).send({ error: 'Internal Server Error' });
           }
           else {
-            res.status(200).send({ accessToken, refreshToken });
+            res.status(201).send({ accessToken, refreshToken });
           }
         });
       }

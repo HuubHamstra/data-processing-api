@@ -1,9 +1,14 @@
 const express = require('express');
 const router = express.Router();
 const query = require('../../query');
+const validator = require('../validator')
 
 // Handle GET request for login
 router.get('/', async (req, res) => {
+  if (!validator.bodyValidation(req, res)) {
+    return;
+  }
+
   const { email, accept } = req.query; // Use req.query for GET requests
   const xmlResponse = accept?.includes('application/xml') || null;
   const dbQuery = `CALL get_full_name('${email}');`;

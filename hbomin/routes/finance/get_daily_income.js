@@ -1,8 +1,13 @@
 var express = require('express');
 var router = express.Router();
 var query = require('../../query');
+const validator = require('../validator')
 
 router.get('/', async (req, res) => {
+    if (!validator.bodyValidation(req, res)) {
+      return;
+    }
+
     const date = req.query.date?.split("T")?.shift();
     const dbQuery = `CALL get_daily_income('${date}')`;
     const { accept } = req.body;

@@ -21,7 +21,7 @@ router.post('/', async (req, res) => {
     let profile = await query.run(dbQuery, !xmlResponse, res);
 
     if (profile) {
-      res.status(200).send({ profile });
+      res.status(202).send({ profile });
     } else {
       res.status(400).send({ error: 'Invalid data' });
     }

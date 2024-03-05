@@ -18,7 +18,8 @@ var registerRouter = require('./routes/register');
 var movieListRouter = require('./routes/movie/movielist');
 
 // Finance routes
-var dailyIncomeRouter = require('./routes/finance/get_daily_income')
+var dailyIncomeRouter = require('./routes/finance/get_daily_income');
+var weeklyIncomeRouter = require('./routes/finance/get_weekly_income');
 
 
 var app = express();
@@ -49,6 +50,7 @@ app.use("/movie/movielist", movieListRouter);
 
 // Finance use
 app.use("/finance/daily-income", dailyIncomeRouter);
+app.use("/finance/weekly-income", weeklyIncomeRouter);
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {

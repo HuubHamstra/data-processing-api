@@ -1,5 +1,5 @@
 Voordat je begint, zorg ervoor dat je Node.js hebt geïnstalleerd op je systeem. 
-Je kunt Node.js downloaden vanaf de oGiciële Node.js-website. Node.js biedt de runtimeomgeving die nodig is om de API te draaien. 
+Je kunt Node.js downloaden vanaf de officiële Node.js-website. Node.js biedt de runtime omgeving die nodig is om de API te draaien. 
 
 ### Clone de repository naar de gewenste locatie.  
 

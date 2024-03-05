@@ -1,5 +1,5 @@
 var connection = require('./database');
-var xml = require('xml');
+const xml2js = require('xml2js');
 
 function runQuery(dbQuery) {
   return new Promise((resolve, reject) => {
@@ -13,34 +13,37 @@ function runQuery(dbQuery) {
   });
 }
 
-async function outputJSON(dbQuery, router) {
+async function run(dbQuery, isJSON = true) {
+  if (isJSON) {
+    return await outputJSON(dbQuery);
+  }
+  else {
+    return await outputXML(dbQuery);
+  }
+}
+
+async function outputJSON(dbQuery) {
   try {
     const results = await runQuery(dbQuery);
-    router.get('/', (req, res) => {
-      res.json({ results: results[0] });
-    });
     return results;
   } catch (error) {
     console.error('Fout bij het uitvoeren van de query: ', error);
-    router.get('/', (req, res) => {
-      res.status(500).json({ error: 'An error occurred' });
-    });
+    throw error; // Re-throw the error to be caught by the caller
   }
 }
 
 
-function outputXML(dbQuery, router) {
-  runQuery(dbQuery, function(results, error) {
-    router.get('/', function(req, res) {
-      res.set('Content-Type', 'text/xml');
-      if (error) {
-        console.error('Fout bij het uitvoeren van de query: ', error);
-        res.status(500).send(xml({ error: 'An error occurred' })); // Sending error as XML response
-      } else {
-        res.send(xml({ results:results[0] })); // Sending results as XML response
-      }
-    });
-  });
-};
+async function outputXML(dbQuery) {
+  try {
+    const results = await runQuery(dbQuery);
+    const xmlBuilder = new xml2js.Builder();
+    const xmlString = xmlBuilder.buildObject({ results: results });
+    return xmlString;
+  } catch (error) {
+    console.error('Fout bij het uitvoeren van de query: ', error);
+    throw error; // Re-throw the error to be caught by the caller
+  }
+}
 
-module.exports = {outputXML, outputJSON};
+
+module.exports = { run, outputXML, outputJSON };

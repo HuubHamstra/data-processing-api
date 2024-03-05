@@ -4,21 +4,25 @@ const query = require('../query');
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
 const bcrypt = require('bcrypt');
+const validator = require('./validator')
 const { secretKey, refreshTokens } = require('./config'); // Import shared configurations
 
 // Handle POST request for login
 router.post('/', async (req, res) => {
-  const { email, password } = req.body;
+  if (!validator.bodyValidation(req, res)) {
+    return;
+  }
+
+  const { email, password, accept } = req.body;
+  const xmlResponse = accept?.includes('application/xml') || null;
   const dbQuery = `CALL get_login_data('${email}')`;
 
   try {
-    let login_data = await query.outputJSON(dbQuery, res);
+    let login_data = await query.run(dbQuery, !xmlResponse, res);
 
     if (login_data && login_data[0] && login_data[0][0]) {
       const received_password = login_data[0][0].password;
-      console.log(received_password);
       verifyPassword(password, received_password).then((is_match) => {
-        console.log(is_match);
         if (is_match) {
           // Generate JWT token upon successful login
           const accessToken = jwt.sign({ email }, secretKey, {
@@ -28,20 +32,20 @@ router.post('/', async (req, res) => {
           // Generate and store refresh token
           const refreshToken = generateRefreshToken();
           refreshTokens[email] = refreshToken;
-          res.json({ accessToken, refreshToken });
+          res.send({ accessToken, refreshToken });
         } else {
-          res.status(401).json({ message: 'Invalid username or password' });
+          res.status(401).send({ error: 'Invalid username or password' });
         }
       })
       .catch(() => {
-        res.status(401).json({ message: 'Invalid username or password' });
+        res.status(401).send({ error: 'Invalid username or password' });
       });
     } else {
-      res.status(401).json({ message: 'Invalid username or password' });
+      res.status(401).send({ error: 'Invalid username or password' });
     }
   } catch (error) {
     console.error(error);
-    res.status(500).json({ message: 'Internal Server Error' });
+    res.status(500).send({ error: 'Internal Server Error' });
   }
 });
 

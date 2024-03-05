@@ -13,13 +13,36 @@ var refreshRouter = require('./routes/refresh-token');
 
 //Account
 var registerRouter = require('./routes/register');
+var createProfileRouter = require('./routes/account/create-profile');
+var updateProfileRouter = require('./routes/account/update-profile');
+var inviteMemberRouter = require('./routes/account/invite-new-member');
+var verifyEmailRouter = require('./routes/account/verify-email');
+var resetPasswordRouter = require('./routes/account/reset-password');
+var getNameRouter = require('./routes/account/get-name');
 
 // Movie routes
+var movieStopRouter = require('./routes/movie/stop-movie');
 var movieListRouter = require('./routes/movie/movielist');
+var movieCounterRouter = require('./routes/movie/movie-counter');
+var movieTableRouter = require('./routes/movie/movietable');
+
+// Serie routes
+var serieListRouter = require('./routes/serie/serielist');
+var serieTableRouter = require('./routes/serie/serietable');
+
+// Subscription routes
+var subscriptionUpdateRouter = require('./routes/subscription/update-subscription');
+
+// Watchlist routes
+var watchlistGetRouter = require('./routes/watchlist/get-watchlist');
+var watchlistUpdateRouter = require('./routes/watchlist/update-watchlist');
+
+// Genre routes
+var genreListRouter = require('./routes/genre/genrelist');
 
 // Finance routes
 var dailyIncomeRouter = require('./routes/finance/get_daily_income');
-var weeklyIncomeRouter = require('./routes/finance/get_weekly_income');
+var totalIncomeRouter = require('./routes/finance/get_total_income');
 
 
 var app = express();
@@ -44,13 +67,35 @@ app.use('/users', usersRouter);
 
 // Account Use
 app.use("/register", registerRouter);
+app.use("/account/create-profile", createProfileRouter);
+app.use("/account/update-profile", updateProfileRouter);
+app.use("/account/invite-new-member", inviteMemberRouter);
+app.use("/account/verify-email", verifyEmailRouter);
+app.use("/account/reset-password", resetPasswordRouter);
+app.use("/account/get-name", getNameRouter);
 
 // Movie use
+app.use("/movie/stop-movie", movieStopRouter);
 app.use("/movie/movielist", movieListRouter);
+app.use("/movie/movie-counter", movieCounterRouter);
+app.use("/movie/movietable", movieTableRouter);
+
+// Serie use
+app.use("/serie/serielist", serieListRouter);
+app.use("/serie/serietable", serieTableRouter);
+
+// Subscription use
+app.use("/subscription/update-subscription", subscriptionUpdateRouter);
+
+// Watchlist use
+app.use("/watchlist/get-watchlist", watchlistGetRouter);
+app.use("/watchlist/update-watchlist", watchlistUpdateRouter);
+
+// Genre use
+app.use("/genre/genrelist", genreListRouter);
 
 // Finance use
 app.use("/finance/daily-income", dailyIncomeRouter);
-app.use("/finance/weekly-income", weeklyIncomeRouter);
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {

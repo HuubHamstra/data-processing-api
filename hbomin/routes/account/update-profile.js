@@ -1,10 +1,33 @@
-var express = require('express');
-const app = express();
-var router = express.Router();
+const express = require('express');
+const router = express.Router();
+const query = require('../../query');
+const validator = require('../validator')
 
-/* GET home page. */
-router.get('/', function(req, res, next) {
-  res.render('index', { title: 'Express' });
+// Handle POST request for login
+router.post('/', async (req, res) => {
+  if (!validator.bodyValidation(req, res)) {
+    return;
+  }
+
+  const { accountId, profileName, profileImage, age, accept } = req.body;
+  let update_name = typeof profileName !== 'undefined';
+  let update_image = typeof profileImage !== 'undefined';
+  let update_age = typeof age !== 'undefined';
+  const xmlResponse = accept?.includes('application/xml') || null;
+  const dbQuery = `CALL update_profile(${accountId}, '${profileName}', '${profileImage}', ${age}, ${update_name}, ${update_image}, ${update_age});`;
+
+  try {
+    let profile = await query.run(dbQuery, !xmlResponse, res);
+
+    if (profile) {
+      res.status(200).send({ profile });
+    } else {
+      res.status(400).send({ error: 'Invalid data' });
+    }
+  } catch (error) {
+    console.error(error);
+    res.status(500).send({ error: 'Internal Server Error' });
+  }
 });
 
 module.exports = router;

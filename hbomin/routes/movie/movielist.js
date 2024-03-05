@@ -1,7 +1,24 @@
-var express = require('express');
-var router = express.Router();
-var query = require('../../query');
+const express = require('express');
+const router = express.Router();
+const query = require('../../query');
+const validator = require('../validator')
 
-// query.outputJSON("CALL", router)
+router.get('/', async (req, res) => {
+  if (!validator.bodyValidation(req, res)) {
+    return;
+  }
+
+  const dbQuery = `SELECT * FROM movie`;
+  const { accept } = req.body;
+  const xmlResponse = accept?.includes('application/xml') || null;
+
+  try {
+    const results = await query.run(dbQuery, !xmlResponse);
+    res.send({ results: results });
+  } catch (error) {
+    console.error('Fout bij het uitvoeren van de query: ', error);
+    res.status(500).send({ error: 'An error occurred' });
+  }
+});
 
 module.exports = router;

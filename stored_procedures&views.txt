@@ -15,27 +15,37 @@ CREATE PROCEDURE create_account(
   IN user_min_age INT(11)
 )
 BEGIN
-  DECLARE commit_insert BOOLEAN DEFAULT TRUE;
   DECLARE new_account_id INT;
 
-  DECLARE EXIT HANDLER FOR SQLEXCEPTION, NOT FOUND, SQLWARNING
+  DECLARE EXIT HANDLER FOR SQLEXCEPTION
   BEGIN  
     ROLLBACK;
   END;
-  
-  INSERT INTO account (first_name, last_name, email, password, payment_method, blocked_end_time, email_validated) VALUES (user_first_name, user_last_name, user_email, user_password, user_payment_method, MAKEDATE(1970,365), false);
+
+  SET TRANSACTION ISOLATION LEVEL SERIALIZABLE;
+
+  SET @user_first_name = user_first_name;
+  SET @user_last_name = user_last_name;
+  SET @user_email = user_email;
+  SET @hashed_password = user_password;
+  SET @user_payment_method = user_payment_method;
+  PREPARE stmt FROM 'INSERT INTO account (first_name, last_name, email, password, payment_method, blocked_end_time, email_validated) VALUES (@user_first_name, @user_last_name, @user_email, @hashed_password, @user_payment_method, CURDATE(), false)';
+  EXECUTE stmt;
+  DEALLOCATE PREPARE stmt;
+
   SET new_account_id = LAST_INSERT_ID();
+
   CALL change_subscription(new_account_id, user_subscription_id);
   CALL create_profile(new_account_id, user_profile_name, user_profile_image, user_profile_age, user_language_id, user_view_movies, user_view_series, user_min_age);
   
-  IF ROW_COUNT() = 0 THEN
-    SET commit_insert = FALSE;
-  END IF;
+  IF ROW_COUNT() > 0 THEN
+    CALL change_subscription(new_account_id, user_subscription_id);
+    CALL create_profile(new_account_id, user_profile_name, user_profile_image, user_profile_age, user_language_id, user_view_movies, user_view_series, user_min_age);
 
-  IF commit_insert THEN
     COMMIT;
+    INSERT INTO audit_log (event_type, event_description) VALUES ('AccountCreation', CONCAT('Account created for user ', user_email));
   ELSE
-    ROLLBACK;
+    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = "Error: Account creation failed.";
   END IF;
 END; //
 DELIMITER ;
@@ -52,24 +62,34 @@ CREATE PROCEDURE create_profile(
   IN user_min_age INT(11)
 )
 BEGIN
-  DECLARE commit_insert BOOLEAN DEFAULT TRUE;
-  DECLARE EXIT HANDLER FOR SQLEXCEPTION, NOT FOUND, SQLWARNING
-  BEGIN
+  DECLARE EXIT HANDLER FOR SQLEXCEPTION
+  BEGIN  
     ROLLBACK;
   END;
-  START TRANSACTION;
 
-  INSERT INTO preference (view_movies, view_series, min_age) VALUES (user_view_movies, user_view_series, user_min_age);
-  INSERT INTO profile (account_id, profile_name, profile_image, profile_age, language_id, preference_id) VALUES (user_account_id, user_profile_name, user_profile_image, user_profile_age, user_language_id, LAST_INSERT_ID());
-  
-  IF ROW_COUNT() = 0 THEN
-    SET commit_insert = FALSE;
-  END IF;
+  SET TRANSACTION ISOLATION LEVEL SERIALIZABLE;
 
-  IF commit_insert THEN
+  SET @user_view_movies = user_view_movies;
+  SET @user_view_series = user_view_series;
+  SET @user_min_age = user_min_age;
+  PREPARE pref_stmt FROM 'INSERT INTO preference (view_movies, view_series, min_age) VALUES (@user_view_movies, @user_view_series, @user_min_age);';
+  EXECUTE pref_stmt;
+  DEALLOCATE PREPARE pref_stmt;
+
+  SET @user_account_id = user_account_id;
+  SET @user_profile_name = user_profile_name;
+  SET @user_profile_image = user_profile_image;
+  SET @user_profile_age = user_profile_age;
+  SET @user_language_id = user_language_id;
+  PREPARE stmt FROM 'INSERT INTO profile (account_id, profile_name, profile_image, profile_age, language_id, preference_id) VALUES (@user_account_id, @user_profile_name, @user_profile_image, @user_profile_age, @user_language_id, LAST_INSERT_ID());';
+  EXECUTE stmt;
+  DEALLOCATE PREPARE stmt;
+
+  IF ROW_COUNT() > 0 THEN
     COMMIT;
+    INSERT INTO audit_log (event_type, event_description) VALUES ('ProfileCreation', CONCAT('Profile created: ', user_profile_name));
   ELSE
-    ROLLBACK;
+    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = "Error: Profile creation failed.";
   END IF;
 END; //
 DELIMITER ;
@@ -92,23 +112,24 @@ CREATE PROCEDURE update_login_data(
   IN user_password VARCHAR(255)
 )
 BEGIN
-  DECLARE commit_update BOOLEAN DEFAULT TRUE;
-  DECLARE EXIT HANDLER FOR SQLEXCEPTION, NOT FOUND, SQLWARNING
-  BEGIN
+  DECLARE EXIT HANDLER FOR SQLEXCEPTION
+  BEGIN  
     ROLLBACK;
   END;
-  START TRANSACTION;
 
-  UPDATE account SET password = user_password WHERE email = user_email;
-  
-  IF ROW_COUNT() = 0 THEN
-    SET commit_update = FALSE;
-  END IF;
+  SET TRANSACTION ISOLATION LEVEL SERIALIZABLE;
 
-  IF commit_update THEN
+  SET @user_email = user_email;
+  SET @user_password = user_password;
+  PREPARE stmt FROM 'UPDATE account SET password = @user_password WHERE email = @user_email;';
+  EXECUTE stmt;
+  DEALLOCATE PREPARE stmt;
+
+  IF ROW_COUNT() > 0 THEN
     COMMIT;
+    INSERT INTO audit_log (event_type, event_description) VALUES ('PasswordUpdate', CONCAT('Password updated: ', user_email));
   ELSE
-    ROLLBACK;
+    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = "Error: Password update failed.";
   END IF;
 END; //
 DELIMITER ;
@@ -118,23 +139,23 @@ CREATE PROCEDURE validate_email(
   IN user_email VARCHAR(255)
 )
 BEGIN
-  DECLARE commit_update BOOLEAN DEFAULT TRUE;
-  DECLARE EXIT HANDLER FOR SQLEXCEPTION, NOT FOUND, SQLWARNING
-  BEGIN
+  DECLARE EXIT HANDLER FOR SQLEXCEPTION
+  BEGIN  
     ROLLBACK;
   END;
-  START TRANSACTION;
 
-  UPDATE account SET email_validated = true WHERE email = user_email;
+  SET TRANSACTION ISOLATION LEVEL SERIALIZABLE;
+
+  SET @user_email = user_email;  
+  PREPARE stmt FROM 'UPDATE account SET email_validated = true WHERE email = @user_email;';
+  EXECUTE stmt;
+  DEALLOCATE PREPARE stmt;
   
-  IF ROW_COUNT() = 0 THEN
-    SET commit_update = FALSE;
-  END IF;
-
-  IF commit_update THEN
+  IF ROW_COUNT() > 0 THEN
     COMMIT;
+    INSERT INTO audit_log (event_type, event_description) VALUES ('ValidateEmail', CONCAT('Email validated: ', user_email));
   ELSE
-    ROLLBACK;
+    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = "Error: Email validation failed.";
   END IF;
 END; //
 DELIMITER ;
@@ -150,13 +171,12 @@ CREATE PROCEDURE update_profile(
   IN update_age BOOLEAN
 )
 BEGIN
-  DECLARE commit_update BOOLEAN DEFAULT TRUE;
-  DECLARE update_query VARCHAR(1000);
-  DECLARE EXIT HANDLER FOR SQLEXCEPTION, NOT FOUND, SQLWARNING
-  BEGIN
+  DECLARE EXIT HANDLER FOR SQLEXCEPTION
+  BEGIN  
     ROLLBACK;
   END;
-  START TRANSACTION;
+
+  SET TRANSACTION ISOLATION LEVEL SERIALIZABLE;
 
   SET update_query = 'UPDATE profile SET ';
 
@@ -186,14 +206,11 @@ BEGIN
   EXECUTE stmt;
   DEALLOCATE PREPARE stmt;
   
-  IF ROW_COUNT() = 0 THEN
-    SET commit_update = FALSE;
-  END IF;
-
-  IF commit_update THEN
+  IF ROW_COUNT() > 0 THEN
     COMMIT;
+    INSERT INTO audit_log (event_type, event_description) VALUES ('UpdateProfile', CONCAT('Profile updated: ', user_account_id));
   ELSE
-    ROLLBACK;
+    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = "Error: Update profile failed.";
   END IF;
 END; //
 DELIMITER ;
@@ -204,23 +221,24 @@ CREATE PROCEDURE change_subscription(
   IN user_subscription_id INT(11)
 )
 BEGIN
-  DECLARE commit_insert BOOLEAN DEFAULT TRUE;
-  DECLARE EXIT HANDLER FOR SQLEXCEPTION, NOT FOUND, SQLWARNING
-  BEGIN
+  DECLARE EXIT HANDLER FOR SQLEXCEPTION
+  BEGIN  
     ROLLBACK;
   END;
-  START TRANSACTION;
 
-  INSERT INTO subscription_record (account_id, subscription_id, start_date) VALUES (user_account_id, user_subscription_id, NOW());
-  
-  IF ROW_COUNT() = 0 THEN
-    SET commit_insert = FALSE;
-  END IF;
+  SET TRANSACTION ISOLATION LEVEL SERIALIZABLE;
 
-  IF commit_insert THEN
+  SET @user_account_id = user_account_id;
+  SET @user_subscription_id = user_subscription_id;
+  PREPARE stmt FROM 'INSERT INTO subscription_record (account_id, subscription_id, start_date) VALUES (@user_account_id, @user_subscription_id, NOW());';
+  EXECUTE stmt;
+  DEALLOCATE PREPARE stmt;
+
+  IF ROW_COUNT() > 0 THEN
     COMMIT;
+    INSERT INTO audit_log (event_type, event_description) VALUES ('SubscriptionChange', CONCAT('Subscription changed: ', user_account_id));
   ELSE
-    ROLLBACK;
+    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = "Error: Subscription change failed.";
   END IF;
 END; //
 DELIMITER ;
@@ -264,23 +282,28 @@ CREATE PROCEDURE update_progress(
   IN progress_timestamp datetime
   )
 BEGIN
-  DECLARE commit_update BOOLEAN DEFAULT TRUE;
-  DECLARE EXIT HANDLER FOR SQLEXCEPTION, NOT FOUND, SQLWARNING
-  BEGIN
+  DECLARE EXIT HANDLER FOR SQLEXCEPTION
+  BEGIN  
     ROLLBACK;
   END;
-  START TRANSACTION;
 
-  UPDATE progress SET timestamp = progress_timestamp, watch_date = CURDATE(), watch_count = watch_count + 1 WHERE user_profile_id = profile_id AND (is_episode AND progress_episode_id = episode_id OR (NOT is_episode AND progress_movie_id = movie_id));
+  SET TRANSACTION ISOLATION LEVEL SERIALIZABLE;
 
-  IF ROW_COUNT() = 0 THEN
-    SET commit_update = FALSE;
-  END IF;
+  SET @user_profile_id = user_profile_id;
+  SET @is_episode = is_episode;
+  SET @progress_movie_id = progress_movie_id;
+  SET @progress_episode_id = progress_episode_id;
+  SET @progress_timestamp = progress_timestamp;
+  PREPARE stmt FROM 'UPDATE progress SET timestamp = @progress_timestamp, watch_date = CURDATE(), watch_count = watch_count + 1 WHERE profile_id = @user_profile_id AND (@is_episode AND episode_id = @progress_episode_id OR (NOT @is_episode AND movie_id = @progress_movie_id));';
+  EXECUTE stmt;
+  DEALLOCATE PREPARE stmt;
+  
 
-  IF commit_update THEN
+  IF ROW_COUNT() > 0 THEN
     COMMIT;
+    INSERT INTO audit_log (event_type, event_description) VALUES ('ProgressUpdate', CONCAT('Progress updated: ', user_profile_id));
   ELSE
-    ROLLBACK;
+    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = "Error: Progress update failed.";
   END IF;
 END; //
 DELIMITER ;
@@ -292,27 +315,28 @@ CREATE PROCEDURE add_to_watchlist(
   IN watch_id INT(11)
 )
 BEGIN
-  DECLARE commit_insert BOOLEAN DEFAULT TRUE;
-  DECLARE EXIT HANDLER FOR SQLEXCEPTION, NOT FOUND, SQLWARNING
-  BEGIN
+  DECLARE EXIT HANDLER FOR SQLEXCEPTION
+  BEGIN  
     ROLLBACK;
   END;
-  START TRANSACTION;
 
+  SET TRANSACTION ISOLATION LEVEL SERIALIZABLE;
+
+  SET @user_profile_id = user_profile_id;
+  SET @watch_id = watch_id;
   IF is_episode THEN
-    INSERT INTO watchlist (profile_id, episode_id) VALUES (user_profile_id, watch_id);
+    PREPARE stmt FROM 'INSERT INTO watchlist (profile_id, episode_id) VALUES (@user_profile_id, @watch_id);';
   ELSE
-    INSERT INTO watchlist (profile_id, movie_id) VALUES (user_profile_id, watch_id);
+    PREPARE stmt FROM 'INSERT INTO watchlist (profile_id, movie_id) VALUES (@user_profile_id, @watch_id);';
   END IF;
+  EXECUTE stmt;
+  DEALLOCATE PREPARE stmt;
   
-  IF ROW_COUNT() = 0 THEN
-    SET commit_insert = FALSE;
-  END IF;
-
-  IF commit_insert THEN
+  IF ROW_COUNT() > 0 THEN
     COMMIT;
+    INSERT INTO audit_log (event_type, event_description) VALUES ('WatchlistAdd', CONCAT('Added to watchlist: ', user_profile_id));
   ELSE
-    ROLLBACK;
+    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = "Error: Watchlist add failed.";
   END IF;
 END; //
 DELIMITER ;
@@ -324,27 +348,28 @@ CREATE PROCEDURE remove_from_watchlist(
   IN watch_id INT(11)
 )
 BEGIN
-  DECLARE commit_delete BOOLEAN DEFAULT TRUE;
-  DECLARE EXIT HANDLER FOR SQLEXCEPTION, NOT FOUND, SQLWARNING
-  BEGIN
+  DECLARE EXIT HANDLER FOR SQLEXCEPTION
+  BEGIN  
     ROLLBACK;
   END;
-  START TRANSACTION;
 
+  SET TRANSACTION ISOLATION LEVEL SERIALIZABLE;
+
+  SET @user_profile_id = user_profile_id;
+  SET @watch_id = watch_id;
   IF is_episode THEN
-    DELETE FROM watchlist WHERE profile_id = user_profile_id AND episode_id = watch_id;
+    PREPARE stmt FROM 'DELETE FROM watchlist WHERE profile_id = @user_profile_id AND episode_id = @watch_id;';
   ELSE
-    DELETE FROM watchlist WHERE profile_id = user_profile_id AND movie_id = watch_id;
+    PREPARE stmt FROM 'DELETE FROM watchlist WHERE profile_id = @user_profile_id AND movie_id = @watch_id;';
   END IF;
-
-  IF ROW_COUNT() = 0 THEN
-    SET commit_delete = FALSE;
-  END IF;
-
-  IF commit_delete THEN
+  EXECUTE stmt;
+  DEALLOCATE PREPARE stmt;
+  
+  IF ROW_COUNT() > 0 THEN
     COMMIT;
+    INSERT INTO audit_log (event_type, event_description) VALUES ('WatchlistRemove', CONCAT('Removed from watchlist: ', user_profile_id));
   ELSE
-    ROLLBACK;
+    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = "Error: Watchlist remove failed.";
   END IF;
 END; //
 DELIMITER ;
@@ -420,6 +445,30 @@ END; //
 DELIMITER ;
 GRANT EXECUTE ON PROCEDURE get_daily_income TO senior;
 
+DELIMITER //
+CREATE PROCEDURE get_total_income()
+BEGIN
+	DECLARE total_income DECIMAL(10, 2) DEFAULT 0.0;
+    
+    SELECT SUM(subscription.subscription_price) INTO total_income
+    FROM subscription
+    JOIN subscription_record ON subscription.subscription_id = subscription_record.subscription_id;
+    
+    SELECT total_income AS total_subscription_income;
+END; //
+DELIMITER ;
+GRANT EXECUTE ON PROCEDURE get_total_income TO senior
+
+DELIMITER //
+CREATE PROCEDURE get_full_name(
+  IN user_email VARCHAR(255)
+)
+BEGIN
+  SELECT first_name, last_name FROM account WHERE email = user_email;
+END; //
+DELIMITER ;
+GRANT EXECUTE ON PROCEDURE get_full_name TO junior, medior, senior;
+
 CREATE VIEW account_junior_view AS SELECT account_id, blocked_end_time, email_validated FROM account;
 GRANT SELECT ON account_junior_view TO junior, medior, senior;
 
@@ -444,23 +493,24 @@ CREATE PROCEDURE update_language_title(
   IN new_title VARCHAR(100)
 )
 BEGIN
-  DECLARE commit_update BOOLEAN DEFAULT TRUE;
-  DECLARE EXIT HANDLER FOR SQLEXCEPTION, NOT FOUND, SQLWARNING
-  BEGIN
+  DECLARE EXIT HANDLER FOR SQLEXCEPTION
+  BEGIN  
     ROLLBACK;
   END;
-  START TRANSACTION;
 
-  UPDATE language SET title = new_title WHERE language_id = update_language_id;
-  
-  IF ROW_COUNT() = 0 THEN
-    SET commit_update = FALSE;
-  END IF;
+  SET TRANSACTION ISOLATION LEVEL SERIALIZABLE;
 
-  IF commit_update THEN
+  SET @update_language_id = update_language_id;
+  SET @new_title = new_title;
+  PREPARE stmt FROM 'UPDATE language SET title = @new_title WHERE language_id = @update_language_id;';
+  EXECUTE stmt;
+  DEALLOCATE PREPARE stmt;
+
+  IF ROW_COUNT() > 0 THEN
     COMMIT;
+    INSERT INTO audit_log (event_type, event_description) VALUES ('LanguageTitleUpdate', CONCAT('Language title updated: ', new_title));
   ELSE
-    ROLLBACK;
+    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = "Error: Update language title failed.";
   END IF;
 END; //
 DELIMITER ;
@@ -478,29 +528,34 @@ CREATE PROCEDURE update_profile_medior(
   IN update_profile_age BOOLEAN
 )
 BEGIN
-  DECLARE commit_update BOOLEAN DEFAULT TRUE;
-  DECLARE EXIT HANDLER FOR SQLEXCEPTION, NOT FOUND, SQLWARNING
-  BEGIN
+  DECLARE EXIT HANDLER FOR SQLEXCEPTION
+  BEGIN  
     ROLLBACK;
   END;
-  START TRANSACTION;
+
+  SET TRANSACTION ISOLATION LEVEL SERIALIZABLE;
+
+  SET @update_profile_id = update_profile_id;
+  SET @user_profile_image = user_profile_image;
+  SET @user_profile_age = user_profile_age;
 
   IF update_profile_image THEN
-    UPDATE profile SET profile_image = new_profile_image WHERE profile_id = update_profile_id;
+    PREPARE img_stmt FROM 'UPDATE profile SET profile_image = @new_profile_image WHERE profile_id = @update_profile_id;';
+    EXECUTE img_stmt;
+    DEALLOCATE PREPARE img_stmt;
   END IF;
 
   IF update_profile_age THEN
-    UPDATE profile SET profile_age = new_profile_age WHERE profile_id = update_profile_id;
-  END IF;
-  
-  IF ROW_COUNT() = 0 THEN
-    SET commit_update = FALSE;
+    PREPARE age_stmt FROM 'UPDATE profile SET profile_age = @new_profile_age WHERE profile_id = @update_profile_id;';
+    EXECUTE age_stmt;
+    DEALLOCATE PREPARE age_stmt;
   END IF;
 
-  IF commit_update THEN
+  IF ROW_COUNT() > 0 THEN
     COMMIT;
+    INSERT INTO audit_log (event_type, event_description) VALUES ('ProfileUpdateMedior', CONCAT('Updated profile: ', update_profile_id));
   ELSE
-    ROLLBACK;
+    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = "Error: Profile update (medior) failed.";
   END IF;
 END; //
 DELIMITER ;
@@ -536,7 +591,7 @@ GRANT SELECT ON episode_viewer_guide_view TO junior, medior, senior;
 CREATE VIEW viewer_guide_view as SELECT * FROM viewer_guide;
 GRANT SELECT ON viewer_guide_view TO junior, medior, senior;
 
-CREATE VIEW watchlist_view as SELECT * FROM watchlist;
+CREATE VIEW watchlist_view as SELECT watchlist.watchlist_id, watchlist.profile_id, watchlist.movie_id, movie.title AS movie_title, watchlist.series_id AS series_id, series.name AS series_title FROM watchlist LEFT JOIN movie ON watchlist.movie_id = movie.movie_id LEFT JOIN series ON watchlist.series_id = series.series_id;
 GRANT SELECT ON watchlist_view TO junior, medior, senior;
 
 CREATE VIEW definition_type_view as SELECT * FROM definition_type;
@@ -557,23 +612,24 @@ CREATE PROCEDURE update_preference_medior(
   IN new_min_age INT(11)
 )
 BEGIN
-  DECLARE commit_update BOOLEAN DEFAULT TRUE;
-  DECLARE EXIT HANDLER FOR SQLEXCEPTION, NOT FOUND, SQLWARNING
-  BEGIN
+  DECLARE EXIT HANDLER FOR SQLEXCEPTION
+  BEGIN  
     ROLLBACK;
   END;
-  START TRANSACTION;
 
-  UPDATE preference SET min_age = new_min_age WHERE preference_id = update_preference_id;
-  
-  IF ROW_COUNT() = 0 THEN
-    SET commit_update = FALSE;
-  END IF;
+  SET TRANSACTION ISOLATION LEVEL SERIALIZABLE;
 
-  IF commit_update THEN
+  SET @update_preference_id = update_preference_id;
+  SET @new_min_age = new_min_age;
+  PREPARE stmt FROM 'UPDATE preference SET min_age = @new_min_age WHERE preference_id = @update_preference_id;';
+  EXECUTE stmt;
+  DEALLOCATE PREPARE stmt;
+
+  IF ROW_COUNT() > 0 THEN
     COMMIT;
+    INSERT INTO audit_log (event_type, event_description) VALUES ('PreferenceUpdate', CONCAT('Preference updated: ', update_preference_id));
   ELSE
-    ROLLBACK;
+    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = "Error: Preference update failed.";
   END IF;
 END; //
 DELIMITER ;
@@ -585,23 +641,24 @@ CREATE PROCEDURE update_subtitle_medior(
   IN new_subtitle_location VARCHAR(255)
 )
 BEGIN
-  DECLARE commit_update BOOLEAN DEFAULT TRUE;
-  DECLARE EXIT HANDLER FOR SQLEXCEPTION, NOT FOUND, SQLWARNING
-  BEGIN
+  DECLARE EXIT HANDLER FOR SQLEXCEPTION
+  BEGIN  
     ROLLBACK;
   END;
-  START TRANSACTION;
 
-  UPDATE subtitle SET subtitle_location = new_subtitle_location WHERE subtitle_id = update_subtitle_id;
+  SET TRANSACTION ISOLATION LEVEL SERIALIZABLE;
+
+  SET @update_subtitle_id = update_subtitle_id;
+  SET @new_subtitle_location = new_subtitle_location;
+  PREPARE stmt FROM 'UPDATE subtitle SET subtitle_location = @new_subtitle_location WHERE subtitle_id = @update_subtitle_id;';
+  EXECUTE stmt;
+  DEALLOCATE PREPARE stmt;
   
-  IF ROW_COUNT() = 0 THEN
-    SET commit_update = FALSE;
-  END IF;
-
-  IF commit_update THEN
+  IF ROW_COUNT() > 0 THEN
     COMMIT;
+    INSERT INTO audit_log (event_type, event_description) VALUES ('SubtitleUpdate', CONCAT('Subtitle updated: ', update_subtitle_id));
   ELSE
-    ROLLBACK;
+    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = "Error: Updating subtitle failed.";
   END IF;
 END; //
 DELIMITER ;
@@ -616,12 +673,12 @@ CREATE PROCEDURE update_movie_medior(
   IN update_description BOOLEAN
 )
 BEGIN
-  DECLARE commit_update BOOLEAN DEFAULT TRUE;
-  DECLARE EXIT HANDLER FOR SQLEXCEPTION, NOT FOUND, SQLWARNING
-  BEGIN
+  DECLARE EXIT HANDLER FOR SQLEXCEPTION
+  BEGIN  
     ROLLBACK;
   END;
-  START TRANSACTION;
+
+  SET TRANSACTION ISOLATION LEVEL SERIALIZABLE;
 
   IF update_title THEN
     UPDATE movie SET title = new_title WHERE movie_id = update_movie_id;
@@ -631,14 +688,11 @@ BEGIN
     UPDATE movie SET description = new_description WHERE movie_id = update_movie_id;
   END IF;
   
-  IF ROW_COUNT() = 0 THEN
-    SET commit_update = FALSE;
-  END IF;
-
-  IF commit_update THEN
+  IF ROW_COUNT() > 0 THEN
     COMMIT;
+    INSERT INTO audit_log (event_type, event_description) VALUES ('MovieUpdate', CONCAT('Movie update: ', update_movie_id));
   ELSE
-    ROLLBACK;
+    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = "Error: Updating movie failed.";
   END IF;
 END; //
 DELIMITER ;
@@ -653,12 +707,12 @@ CREATE PROCEDURE update_episode_medior(
   IN update_description BOOLEAN
 )
 BEGIN
-  DECLARE commit_update BOOLEAN DEFAULT TRUE;
-  DECLARE EXIT HANDLER FOR SQLEXCEPTION, NOT FOUND, SQLWARNING
-  BEGIN
+  DECLARE EXIT HANDLER FOR SQLEXCEPTION
+  BEGIN  
     ROLLBACK;
   END;
-  START TRANSACTION;
+
+  SET TRANSACTION ISOLATION LEVEL SERIALIZABLE;
 
   IF update_title THEN
     UPDATE episode SET title = new_title WHERE episode_id = update_episode_id;
@@ -668,14 +722,11 @@ BEGIN
     UPDATE episode SET description = new_description WHERE episode_id = update_episode_id;
   END IF;
   
-  IF ROW_COUNT() = 0 THEN
-    SET commit_update = FALSE;
-  END IF;
-
-  IF commit_update THEN
+  IF ROW_COUNT() > 0 THEN
     COMMIT;
+    INSERT INTO audit_log (event_type, event_description) VALUES ('EpisodeUpdate', CONCAT('Episode update: ', update_episode_id));
   ELSE
-    ROLLBACK;
+    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = "Error: Updating episode failed.";
   END IF;
 END; //
 DELIMITER ;
@@ -690,12 +741,12 @@ CREATE PROCEDURE update_season_medior(
   IN update_description BOOLEAN
 )
 BEGIN
-  DECLARE commit_update BOOLEAN DEFAULT TRUE;
-  DECLARE EXIT HANDLER FOR SQLEXCEPTION, NOT FOUND, SQLWARNING
-  BEGIN
+  DECLARE EXIT HANDLER FOR SQLEXCEPTION
+  BEGIN  
     ROLLBACK;
   END;
-  START TRANSACTION;
+
+  SET TRANSACTION ISOLATION LEVEL SERIALIZABLE;
 
   IF update_name THEN
     UPDATE season SET name = new_name WHERE season_id = update_season_id;
@@ -705,14 +756,11 @@ BEGIN
     UPDATE season SET description = new_description WHERE season_id = update_season_id;
   END IF;
   
-  IF ROW_COUNT() = 0 THEN
-    SET commit_update = FALSE;
-  END IF;
-
-  IF commit_update THEN
+  IF ROW_COUNT() > 0 THEN
     COMMIT;
+    INSERT INTO audit_log (event_type, event_description) VALUES ('SeasonUpdate', CONCAT('Season update: ', update_season_id));
   ELSE
-    ROLLBACK;
+    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = "Error: Updating season failed.";
   END IF;
 END; //
 DELIMITER ;
@@ -727,12 +775,12 @@ CREATE PROCEDURE update_genre_medior(
   IN update_description BOOLEAN
 )
 BEGIN
-  DECLARE commit_update BOOLEAN DEFAULT TRUE;
-  DECLARE EXIT HANDLER FOR SQLEXCEPTION, NOT FOUND, SQLWARNING
-  BEGIN
+  DECLARE EXIT HANDLER FOR SQLEXCEPTION
+  BEGIN  
     ROLLBACK;
   END;
-  START TRANSACTION;
+
+  SET TRANSACTION ISOLATION LEVEL SERIALIZABLE;
 
   IF update_title THEN
     UPDATE genre SET title = new_title WHERE genre_id = update_genre_id;
@@ -742,14 +790,11 @@ BEGIN
     UPDATE genre SET description = new_description WHERE genre_id = update_genre_id;
   END IF;
   
-  IF ROW_COUNT() = 0 THEN
-    SET commit_update = FALSE;
-  END IF;
-
-  IF commit_update THEN
+  IF ROW_COUNT() > 0 THEN
     COMMIT;
+    INSERT INTO audit_log (event_type, event_description) VALUES ('GenreUpdate', CONCAT('Genre update: ', update_genre_id));
   ELSE
-    ROLLBACK;
+    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = "Error: Updating genre failed.";
   END IF;
 END; //
 DELIMITER ;
@@ -761,23 +806,20 @@ CREATE PROCEDURE update_definition_type_medior(
   IN new_name VARCHAR(255)
 )
 BEGIN
-  DECLARE commit_update BOOLEAN DEFAULT TRUE;
-  DECLARE EXIT HANDLER FOR SQLEXCEPTION, NOT FOUND, SQLWARNING
-  BEGIN
+  DECLARE EXIT HANDLER FOR SQLEXCEPTION
+  BEGIN  
     ROLLBACK;
   END;
-  START TRANSACTION;
+
+  SET TRANSACTION ISOLATION LEVEL SERIALIZABLE;
 
   UPDATE definition_type SET name = new_name WHERE definition_type_id = update_definition_type_id;
   
-  IF ROW_COUNT() = 0 THEN
-    SET commit_update = FALSE;
-  END IF;
-
-  IF commit_update THEN
+  IF ROW_COUNT() > 0 THEN
     COMMIT;
+    INSERT INTO audit_log (event_type, event_description) VALUES ('DefinitionTypeUpdate', CONCAT('Definition type update: ', update_definition_type_id));
   ELSE
-    ROLLBACK;
+    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = "Error: Updating definition type failed.";
   END IF;
 END; //
 DELIMITER ;
@@ -789,23 +831,20 @@ CREATE PROCEDURE update_season_medior(
   IN new_description TEXT
 )
 BEGIN
-  DECLARE commit_update BOOLEAN DEFAULT TRUE;
-  DECLARE EXIT HANDLER FOR SQLEXCEPTION, NOT FOUND, SQLWARNING
-  BEGIN
+  DECLARE EXIT HANDLER FOR SQLEXCEPTION
+  BEGIN  
     ROLLBACK;
   END;
-  START TRANSACTION;
+
+  SET TRANSACTION ISOLATION LEVEL SERIALIZABLE;
 
   UPDATE season SET description = new_description WHERE season_id = update_season_id;
   
-  IF ROW_COUNT() = 0 THEN
-    SET commit_update = FALSE;
-  END IF;
-
-  IF commit_update THEN
+  IF ROW_COUNT() > 0 THEN
     COMMIT;
+    INSERT INTO audit_log (event_type, event_description) VALUES ('SeasonUpdate', CONCAT('Season description update: ', update_season_id));
   ELSE
-    ROLLBACK;
+    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = "Error: Updating season failed.";
   END IF;
 END; //
 DELIMITER ;
@@ -817,24 +856,43 @@ CREATE PROCEDURE update_viewer_guide_medior(
   IN new_name VARCHAR(255)
 )
 BEGIN
-  DECLARE commit_update BOOLEAN DEFAULT TRUE;
-  DECLARE EXIT HANDLER FOR SQLEXCEPTION, NOT FOUND, SQLWARNING
-  BEGIN
+  DECLARE EXIT HANDLER FOR SQLEXCEPTION
+  BEGIN  
     ROLLBACK;
   END;
-  START TRANSACTION;
+
+  SET TRANSACTION ISOLATION LEVEL SERIALIZABLE;
 
   UPDATE viewer_guide SET name = new_name WHERE viewer_guide_id = update_viewer_guide_id;
   
-  IF ROW_COUNT() = 0 THEN
-    SET commit_update = FALSE;
-  END IF;
-
-  IF commit_update THEN
+  IF ROW_COUNT() > 0 THEN
     COMMIT;
+    INSERT INTO audit_log (event_type, event_description) VALUES ('ViewerGuideUpdate', CONCAT('Viewer guide update: ', update_viewer_guide_id));
   ELSE
-    ROLLBACK;
+    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = "Error: Updating viewer guide procedure failed.";
   END IF;
 END; //
 DELIMITER ;
 GRANT EXECUTE ON PROCEDURE update_viewer_guide_medior TO medior, senior;
+
+DELIMITER //
+CREATE PROCEDURE get_movie_count()
+BEGIN
+  SELECT COUNT(movie_id) AS movie_count FROM movie;
+END; //
+DELIMITER ;
+GRANT EXECUTE ON PROCEDURE get_movie_count TO medior, senior;
+
+DELIMITER //
+CREATE PROCEDURE get_total_income()
+BEGIN
+  DECLARE total_income DECIMAL(10, 2) DEFAULT 0.0;
+  
+  SELECT SUM(subscription.subscription_price) INTO total_income
+  FROM subscription
+  JOIN subscription_record ON subscription.subscription_id = subscription_record.subscription_id;
+  
+  SELECT total_income AS total_subscription_income;
+END; //
+DELIMITER ;
+GRANT EXECUTE ON PROCEDURE get_total_income TO senior;

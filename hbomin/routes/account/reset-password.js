@@ -101,10 +101,6 @@ router.post('/', async (req, res) => {
 });
 
 router.get('/', async (req, res) => {
-  if (!validator.bodyValidation(req, res)) {
-    return;
-  }
-
   const token = req.query.token;
   const newPassword = req.query.pass;
 

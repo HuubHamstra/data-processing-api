@@ -4,10 +4,6 @@ const query = require('../query');
 const validator = require('./validator')
 
 router.get('/', async (req, res) => {
-    if (!validator.bodyValidation(req, res)) {
-      return;
-    }
-
     const { accept } = req.body;
     const xmlResponse = accept?.includes('application/xml') || null;
     const dbQuery = `SELECT account_id AS id, first_name AS firstname, last_name AS lastname, email, email_validated, payment_method AS subscription FROM account`;

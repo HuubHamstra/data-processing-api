@@ -5,10 +5,6 @@ const validator = require('../validator')
 
 // Handle GET request for login
 router.get('/', async (req, res) => {
-  if (!validator.bodyValidation(req, res)) {
-    return;
-  }
-
   const dbQuery = `SELECT * FROM watchlist_view`;
   const accept = req.headers.accept || 'application/json';
   const xmlResponse = accept.includes('application/xml');

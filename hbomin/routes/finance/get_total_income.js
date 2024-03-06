@@ -4,10 +4,6 @@ var query = require('../../query');
 const validator = require('../validator')
 
 router.get('/', async (req, res) => {
-    if (!validator.bodyValidation(req, res)) {
-      return;
-    }
-
     const dbQuery = `CALL get_total_income()`;
     const { accept } = req.body;
     const xmlResponse = accept?.includes('application/xml') || null;

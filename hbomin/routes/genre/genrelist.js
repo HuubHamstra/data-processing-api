@@ -4,10 +4,6 @@ const query = require('../../query');
 const validator = require('../validator')
 
 router.get('/', async (req, res) => {
-  if (!validator.bodyValidation(req, res)) {
-    return;
-  }
-
   const dbQuery = `SELECT * FROM genre`;
   const { accept } = req.body;
   const xmlResponse = accept?.includes('application/xml') || null;

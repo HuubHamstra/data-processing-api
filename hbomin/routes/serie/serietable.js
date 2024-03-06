@@ -4,10 +4,6 @@ const query = require('../../query');
 const validator = require('../validator')
 
 router.get('/', async (req, res) => {
-  if (!validator.bodyValidation(req, res)) {
-    return;
-  }
-
   const { accept } = req.body;
   const xmlResponse = accept?.includes('application/xml') || null;
   const dbQuery = `SELECT series.name, series.description, genre.title as genre_title FROM series JOIN genre on series.genre_id = genre.genre_id;`;

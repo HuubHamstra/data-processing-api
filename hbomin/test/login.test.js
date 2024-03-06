@@ -1,5 +1,5 @@
 const request = require('supertest');
-const app = require('../app'); 
+const app = require('../app');
 
 describe('POST /login', () => {
     
@@ -29,7 +29,7 @@ describe('POST /login', () => {
       });
 
     expect(response.status).toBe(401);
-    expect(response.body).toHaveProperty('message', 'Invalid username or password');
+    expect(response.body.error).toBe('Invalid username or password');
   });
 
   // Invalid email
@@ -43,6 +43,16 @@ describe('POST /login', () => {
       });
 
     expect(response.status).toBe(401);
-    expect(response.body).toHaveProperty('message', 'Invalid username or password');
+    expect(response.body.error).toBe('Invalid username or password');
+  });
+
+  // Empty request body
+  it('Return 400 for empty request body', async () => {
+    const response = await request(app)
+      .post('/login')
+      .set('Accept', 'application/json');
+
+    expect(response.status).toBe(400);
+    expect(response.body.error).toBe('Invalid data');
   });
 });

@@ -2,11 +2,12 @@ var express = require('express');
 var router = express.Router();
 var query = require('../../query');
 const validator = require('../validator')
+const authenticateToken = require('../authenticateToken');
 
-router.get('/', async (req, res) => {
-    const dbQuery = `CALL get_total_income()`;
+router.get('/', authenticateToken, async (req, res) => {
     const { accept } = req.body;
     const xmlResponse = accept?.includes('application/xml') || null;
+    const dbQuery = `CALL get_total_income()`;
   
     try {
       const results = await query.run(dbQuery, !xmlResponse);

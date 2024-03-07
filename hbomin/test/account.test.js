@@ -1,5 +1,6 @@
 const request = require('supertest');
 const app = require('../app');
+const e = require('express');
 
 // ------------------------
 // Invite New Member
@@ -14,7 +15,7 @@ describe('POST /account/invite-new-member', () => {
       });
 
     expect(response.status).toBe(200);
-    expect(response.text).toBe('Email sent successfully');
+    expect(response.body.message).toBe('Email sent successfully');
   });
 
   it('Returns a error for invalid email', async () => {
@@ -25,8 +26,29 @@ describe('POST /account/invite-new-member', () => {
         recipient: 'not-a-mail'
       });
 
-    expect(response.status).toBe(500);
+    expect(response.status).toBe(400);
+    expect(response.body.error).toBe('Invalid email address');
   }, 10000);
+  
+  it('Returns a error for invalid email / Empty mail', async () => {
+    const response = await request(app)
+      .post('/account/invite-new-member')
+      .send({
+        profileName: 'Test Profile'
+      });
+
+    expect(response.status).toBe(400);
+    expect(response.body.error).toBe('Invalid email address');
+  }, 10000);
+  
+  it('Returns error for empty body', async () => {
+    const response = await request(app)
+      .post('/account/invite-new-member');
+
+    expect(response.status).toBe(400);
+    expect(response.body.error).toBe('Invalid data');
+  }, 10000);
+
 });
 
 // ------------------------
@@ -45,6 +67,15 @@ describe('POST /account/reset-password', () => {
       expect(response.body).toHaveProperty('refreshToken');
     });
 
+    it('Returns error for empty body', async () => {
+      const response = await request(app)
+        .post('/account/reset-password')
+        .send({
+        });
+  
+      expect(response.status).toBe(400);
+    });
+
     it('Returns error for invalid email', async () => {
         const response = await request(app)
           .post('/account/reset-password')
@@ -52,7 +83,7 @@ describe('POST /account/reset-password', () => {
             email: 'invalid-mail',
           });
     
-        expect(response.status).toBe(500);
+        expect(response.status).toBe(400);
       });
 });
 
@@ -75,18 +106,36 @@ describe('POST /account/create-profile', () => {
           accept: 'application/json',
         });
   
-      expect(response.status).toBe(200);
+      expect(response.status).toBe(202);
       expect(response.body).toHaveProperty('profile');
     });
 
-    it('Throws error posting without data', async () => {
+    it('Throws error for missing required fields', async () => {
+      const response = await request(app)
+        .post('/account/create-profile')
+        .send({
+          accountId: 57, // Dummy Profile ID
+          age: 25,
+          language: 1,
+          viewMovies: 1,
+          viewSeries: 1,
+          minAge: 18,
+          accept: 'application/json',
+        });
+  
+      expect(response.status).toBe(400);
+      expect(response.body.error).toBe('Missing required fields')
+    });
+
+    it('Throws error posting without data / missing required fields', async () => {
         const response = await request(app)
           .post('/account/create-profile')
           .send({
 
           });
     
-        expect(response.status).toBe(500);
+        expect(response.status).toBe(400);
+        expect(response.body.error).toBe('Missing required fields')
       });
 });
 
@@ -115,6 +164,7 @@ describe('POST /account/update-profile', () => {
           .send({
           });
     
-        expect(response.status).toBe(500);
+        expect(response.status).toBe(400);
+        expect(response.body.error).toBe('Invalid data')
       });
 });

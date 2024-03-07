@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const mail = require('../../mail-transporter');
-const validator = require('../validator')
+const validator = require('../validator');
 
 router.post('/', async (req, res) => {
   if (!validator.bodyValidation(req, res)) {
@@ -10,6 +10,13 @@ router.post('/', async (req, res) => {
 
   const { profileName, recipient, url } = req.body;
   
+  // Email validation regex pattern
+  const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+  if (!emailPattern.test(recipient)) {
+    return res.status(400).send({ error: 'Invalid email address' });
+  }
+
   try {
     const mailOptions = {
       from: 'hbomin.api@gmail.com',

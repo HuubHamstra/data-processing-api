@@ -7,7 +7,7 @@ const { secretKey, refreshTokens } = require('../config'); // Import shared conf
 const query = require('../../query');
 const bcrypt = require('bcrypt');
 const crypto = require('crypto');
-const validator = require('../validator')
+const validator = require('../validator');
 
 async function authenticateToken(token) {
   if (token == null) {
@@ -53,6 +53,13 @@ router.post('/', async (req, res) => {
   }
 
   var { email, password } = req.body;
+
+  // Email validation regex pattern
+  const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+  if (!emailPattern.test(email)) {
+    return res.status(400).send({ error: 'Invalid email address' });
+  }
 
   let isGenerated = false;
   if (!password) {

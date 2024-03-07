@@ -13,6 +13,12 @@ router.post('/', async (req, res) => {
     return;
   }
 
+  const requiredFields = ['fullname', 'email', 'password'];
+
+  if (!requiredFields.every(field => req.body[field])) {
+    return res.status(400).send({ error: 'Missing required fields' });
+  }
+
   const body = req.body;
   const accept = body["accept"];
   const xmlResponse = accept?.includes('application/xml') || null;

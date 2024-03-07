@@ -49,8 +49,7 @@ describe('POST /login', () => {
   // Empty request body
   it('Return 400 for empty request body', async () => {
     const response = await request(app)
-      .post('/login')
-      .set('Accept', 'application/json');
+      .post('/login');
 
     expect(response.status).toBe(400);
     expect(response.body.error).toBe('Invalid data');

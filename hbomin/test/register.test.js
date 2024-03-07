@@ -13,9 +13,23 @@ describe('POST /register', () => {
         password: 'test',
       });
 
-    expect(response.status).toBe(200);
+    expect(response.status).toBe(201);
     expect(response.body).toHaveProperty('accessToken');
     expect(response.body).toHaveProperty('refreshToken');
+  });
+
+  it('Returns 400 for missing password', async () => {
+    const response = await request(app)
+      .post('/register')
+      .send({
+        accept: 'application/json',
+        fullname: 'Test Account ',
+        email: 'test@test.test',
+      });
+
+    expect(response.status).toBe(400);
+    expect(response.body.error).toBe('Missing required fields');
+
   });
 
   it('Returns 400 for invalid email format', async () => {
@@ -29,7 +43,15 @@ describe('POST /register', () => {
       });
   
     expect(response.status).toBe(400);
-    expect(response.body).toHaveProperty('message', 'Invalid email format');
+    expect(response.body.error).toBe('Invalid email format');
+  });
+  
+  it('Returns 400 for invalid data / empty body', async () => {
+    const response = await request(app)
+      .post('/register');
+  
+    expect(response.status).toBe(400);
+    expect(response.body.error).toBe('Invalid data');
   });
   
 });

@@ -1,10 +1,15 @@
 const express = require('express');
 const router = express.Router();
-const validator = require('../validator')
+const validator = require('../validator');
 const query = require('../../query');
 
 // Handle POST request for login
 router.post('/', async (req, res) => {
+  
+  if (!req.body.profileName || !req.body.age) {
+    return res.status(400).send({ error: 'Missing required fields' });
+  }
+
   if (!validator.bodyValidation(req, res)) {
     return;
   }

@@ -158,6 +158,17 @@ describe('POST /account/update-profile', () => {
       expect(response.body).toHaveProperty('profile');
     });
 
+    it('Throws error for only accept header', async () => {
+      const response = await request(app)
+        .post('/account/update-profile')
+        .send({
+          accept: 'application/json'
+        });
+  
+        expect(response.status).toBe(400);
+        expect(response.body.error).toBe('Invalid data, body data should be present');
+    });
+
     it('Throws error posting without data', async () => {
         const response = await request(app)
           .post('/account/update-profile')

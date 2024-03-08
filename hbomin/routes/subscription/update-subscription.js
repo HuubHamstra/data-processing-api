@@ -12,6 +12,9 @@ router.post('/', async (req, res) => {
   const { accountId, subscriptionId } = req.body;
   const acceptHeader = req.get('accept');
   const xmlResponse = acceptHeader && acceptHeader.includes('application/xml');
+  if (xmlResponse) {
+    res.setHeader('content-type', 'application/xml');
+  };
   const dbQuery = `CALL change_subscription(${accountId}, ${subscriptionId});`;
 
   try {

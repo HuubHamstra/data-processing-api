@@ -6,6 +6,9 @@ const authenticateToken = require('../authenticateToken');
 router.get('/', authenticateToken, async (req, res) => {
     const acceptHeader = req.get('accept');
     const xmlResponse = acceptHeader && acceptHeader.includes('application/xml');
+  if (xmlResponse) {
+    res.setHeader('content-type', 'application/xml');
+  };
     const dbQuery = `CALL get_total_income()`;
   
     try {

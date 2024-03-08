@@ -7,6 +7,9 @@ router.get('/', async (req, res) => {
   const dbQuery = `SELECT * FROM watchlist_view`;
   const acceptHeader = req.get('accept');
   const xmlResponse = acceptHeader && acceptHeader.includes('application/xml');
+  if (xmlResponse) {
+    res.setHeader('content-type', 'application/xml');
+  };
 
   try {
     const results = await query.run(dbQuery, !xmlResponse);

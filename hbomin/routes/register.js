@@ -22,6 +22,9 @@ router.post('/', async (req, res) => {
   const body = req.body;
   const acceptHeader = req.get('accept');
   const xmlResponse = acceptHeader && acceptHeader.includes('application/xml');
+  if (xmlResponse) {
+    res.setHeader('content-type', 'application/xml');
+  };
   const full_name = body["fullname"];
   const email = body["email"];
   const password = body["password"];

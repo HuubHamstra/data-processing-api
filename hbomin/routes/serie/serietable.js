@@ -5,6 +5,9 @@ const query = require('../../query');
 router.get('/', async (req, res) => {
   const acceptHeader = req.get('accept');
   const xmlResponse = acceptHeader && acceptHeader.includes('application/xml');
+  if (xmlResponse) {
+    res.setHeader('content-type', 'application/xml');
+  };
   const dbQuery = `SELECT series.name, series.description, genre.title as genre_title FROM series JOIN genre on series.genre_id = genre.genre_id;`;
 
   try {

@@ -15,6 +15,9 @@ router.post('/', async (req, res) => {
   let update_age = typeof age !== 'undefined';
   const acceptHeader = req.get('accept');
   const xmlResponse = acceptHeader && acceptHeader.includes('application/xml');
+  if (xmlResponse) {
+    res.setHeader('content-type', 'application/xml');
+  };
   const dbQuery = `CALL update_profile(${accountId}, '${profileName}', '${profileImage}', ${age}, ${update_name}, ${update_image}, ${update_age});`;
 
   try {

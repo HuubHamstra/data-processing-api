@@ -13,6 +13,9 @@ router.post('/', async (req, res) => {
   const isEpisode = typeof movieId === 'undefined';
   const acceptHeader = req.get('accept');
   const xmlResponse = acceptHeader && acceptHeader.includes('application/xml');
+  if (xmlResponse) {
+    res.setHeader('content-type', 'application/xml');
+  };
   const dbQuery = `CALL update_progress(${profileId}, ${isEpisode}, ${progressId}, ${movieId}, ${episodeId}, FROM_UNIXTIME(${unixTime} / 1000));`;
 
   try {

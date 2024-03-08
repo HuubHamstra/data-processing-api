@@ -29,16 +29,20 @@ router.post('/', async (req, res) => {
     return;
   }
   
-  if (xmlResponse) {
-    res.setHeader('content-type', 'application/xml');
-  };
   const dbQuery = `CALL create_profile(${accountId}, '${profileName}', '${profileImage}', ${age}, ${language}, ${viewMovies}, ${viewSeries}, ${minAge});`;
 
   try {
     let profile = await query.run(dbQuery, !xmlResponse, res);
 
     if (profile) {
-      res.status(202).send({ profile });
+      if (xmlResponse) {
+        res.setHeader('content-type', 'application/xml');
+        res.status(202).send(profile);
+      }
+      else
+      {
+        res.status(202).send({ profile });
+      }
     } else {
       res.status(400).send({ error: 'Invalid data' });
     }

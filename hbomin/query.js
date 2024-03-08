@@ -31,17 +31,17 @@ async function outputJSON(dbQuery) {
   }
 }
 
-
 async function outputXML(dbQuery) {
   try {
     const results = await runQuery(dbQuery);
+    const rowDataPacket = results[0]; // Access the RowDataPacket
+    const xmlObject = { results: rowDataPacket }; // Construct XML object with RowDataPacket
     const xmlBuilder = new xml2js.Builder();
-    const xmlString = xmlBuilder.buildObject({ results: results });
+    const xmlString = xmlBuilder.buildObject(xmlObject);
     return xmlString;
   } catch (error) {
-        throw error; // Re-throw the error to be caught by the caller
+    throw error;
   }
 }
-
 
 module.exports = { run, outputXML, outputJSON };

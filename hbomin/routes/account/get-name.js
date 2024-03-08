@@ -16,11 +16,16 @@ router.get('/', async (req, res) => {
   try {
     const result = await query.run(dbQuery, !xmlResponse);
     
-    if (result && result[0] && result[0][0]) {
-      const { first_name, last_name } = result[0][0];
-      res.status(200).send({ first_name, last_name });
+    if (xmlResponse) {
+      res.set('Content-Type', 'application/xml');
+      res.status(200).send(result);
     } else {
-      res.status(400).send({ error: 'Invalid data' });
+      if (result && result[0] && result[0][0]) {
+        const { first_name, last_name } = result[0][0];
+        res.status(200).json({ first_name, last_name });
+      } else {
+        res.status(400).json({ error: 'Invalid data, no account found with this email' });
+      }
     }
   } catch (error) {
         res.status(500).send({ error: 'Internal Server Error' });

@@ -8,6 +8,14 @@ describe('GET /genre/genrelist', () => {
     expect(response.status).toBe(200);
   });
 
+  it('Responds with status code 200 in xml format', async () => {
+    const response = await request(app).get('/genre/genrelist')
+      .set('accept', 'application/xml');
+      
+    expect(response.status).toBe(200);
+    expect(response.headers['content-type']).toMatch('application/xml')
+  });
+
   // Check actual response
   it('Responds with containing a list of genres', async () => {
     const response = await request(app).get('/genre/genrelist');
@@ -25,4 +33,5 @@ describe('GET /genre/genrelist', () => {
 
     expect(genreList).toEqual(expect.arrayContaining(expectedGenres));
   });
+
 });

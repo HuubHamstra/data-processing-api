@@ -1,5 +1,5 @@
 const jwt = require('jsonwebtoken');
-const { loginAndGetToken } = require('./generate-test-token');
+const { loginAndGetToken } = require('./generate-sample-token');
 
 const request = require('supertest');
 const app = require('../app');

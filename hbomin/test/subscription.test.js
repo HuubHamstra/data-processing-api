@@ -20,6 +20,7 @@ describe('POST /subscription/update-subscription', () => {
             accountId: 57, // Dummy profile id
           });
     
-        expect(response.status).toBe(500);
+        expect(response.status).toBe(400);
+        expect(response.body).toEqual({ error: 'Invalid data, data should be a number' });
     });
 });

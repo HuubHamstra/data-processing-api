@@ -6,5 +6,6 @@ module.exports = {
     collectCoverageFrom: ['**/*.js', '!**/node_modules/**', '!**/test/**'],
     coverageReporters: ['lcov', 'text-summary'],
     verbose: true,
+    testPathIgnorePatterns: ["/test/generate-sample-token.js"]
   };
   

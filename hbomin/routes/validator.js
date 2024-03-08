@@ -88,4 +88,4 @@ function isObject(input) {
   return !isNull(input) && !isUndefined(input) && typeof input === 'object' && input !== null && !Array.isArray(input);
 }
 
-module.exports = { bodyValidation, emailValidation, dataValidation, rangeValidation, unsignedValidation };
+module.exports = { bodyValidation, emailValidation, dataValidation, rangeValidation, unsignedValidation, isNumber };

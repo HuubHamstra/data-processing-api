@@ -4,16 +4,27 @@ const query = require('../../query');
 
 // Handle GET request for login
 router.get('/', async (req, res) => {
-  const dbQuery = `SELECT * FROM watchlist_view`;
+  const { profileId } = req.query;
+
+  if (profileId && isNaN(profileId)) {
+    res.status(400).send({ error: 'Invalid data, profileId must be a number' });
+    return;
+  }
+
+  const dbQuery = (profileId ? `SELECT * FROM watchlist_view WHERE profile_id = ${profileId}` : `SELECT * FROM watchlist_view`);
   const acceptHeader = req.get('accept');
   const xmlResponse = acceptHeader && acceptHeader.includes('application/xml');
-  if (xmlResponse) {
-    res.setHeader('content-type', 'application/xml');
-  };
 
   try {
     const results = await query.run(dbQuery, !xmlResponse);
-    res.send({ results: results });
+
+    if (xmlResponse) {
+      res.setHeader('content-type', 'application/xml');
+      res.status(200).send(results);
+    }
+    else {
+      res.status(200).send({ results: results });
+    }
   } catch (error) {
         res.status(500).send({ error: 'An error occurred' });
   }

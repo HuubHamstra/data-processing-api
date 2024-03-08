@@ -46,7 +46,7 @@ describe('POST /account/invite-new-member', () => {
       .post('/account/invite-new-member');
 
     expect(response.status).toBe(400);
-    expect(response.body.error).toBe('Invalid data');
+    expect(response.body.error).toBe('Invalid data, body data should be present');
   }, 10000);
 
 });
@@ -103,7 +103,6 @@ describe('POST /account/create-profile', () => {
           viewMovies: 1,
           viewSeries: 1,
           minAge: 18,
-          accept: 'application/json',
         });
   
       expect(response.status).toBe(202);
@@ -120,7 +119,6 @@ describe('POST /account/create-profile', () => {
           viewMovies: 1,
           viewSeries: 1,
           minAge: 18,
-          accept: 'application/json',
         });
   
       expect(response.status).toBe(400);
@@ -151,22 +149,10 @@ describe('POST /account/update-profile', () => {
           profileName: 'Update Profile Name',
           profileImage: 'https://example.com/updated-avatar.jpg',
           age: 30,
-          accept: 'application/json',
         });
   
       expect(response.status).toBe(200);
       expect(response.body).toHaveProperty('profile');
-    });
-
-    it('Throws error for only accept header', async () => {
-      const response = await request(app)
-        .post('/account/update-profile')
-        .send({
-          accept: 'application/json'
-        });
-  
-        expect(response.status).toBe(400);
-        expect(response.body.error).toBe('Invalid data, body data should be present');
     });
 
     it('Throws error posting without data', async () => {
@@ -176,6 +162,6 @@ describe('POST /account/update-profile', () => {
           });
     
         expect(response.status).toBe(400);
-        expect(response.body.error).toBe('Invalid data')
+        expect(response.body.error).toBe('Invalid data, body data should be present')
       });
 });

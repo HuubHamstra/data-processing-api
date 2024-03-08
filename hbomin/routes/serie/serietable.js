@@ -1,11 +1,10 @@
 const express = require('express');
 const router = express.Router();
 const query = require('../../query');
-const validator = require('../validator')
 
 router.get('/', async (req, res) => {
-  const { accept } = req.body;
-  const xmlResponse = accept?.includes('application/xml') || null;
+  const acceptHeader = req.get('accept');
+  const xmlResponse = acceptHeader && acceptHeader.includes('application/xml');
   const dbQuery = `SELECT series.name, series.description, genre.title as genre_title FROM series JOIN genre on series.genre_id = genre.genre_id;`;
 
   try {

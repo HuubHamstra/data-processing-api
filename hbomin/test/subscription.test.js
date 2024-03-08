@@ -8,7 +8,6 @@ describe('POST /subscription/update-subscription', () => {
         .send({
           accountId: 57, // Dummy profile id
           subscriptionId: 1,
-          accept: 'application/json',
         });
   
       expect(response.status).toBe(200);
@@ -19,7 +18,6 @@ describe('POST /subscription/update-subscription', () => {
           .post('/subscription/update-subscription')
           .send({
             accountId: 57, // Dummy profile id
-            accept: 'application/json',
           });
     
         expect(response.status).toBe(500);

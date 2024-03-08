@@ -13,8 +13,9 @@ router.post('/', async (req, res) => {
     return;
   }
 
-  const { email, password, accept } = req.body;
-  const xmlResponse = accept?.includes('application/xml') || null;
+  const { email, password } = req.body;
+  const acceptHeader = req.get('accept');
+  const xmlResponse = acceptHeader && acceptHeader.includes('application/xml');
   const dbQuery = `CALL get_login_data('${email}')`;
 
   try {

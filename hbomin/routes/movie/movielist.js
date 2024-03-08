@@ -1,12 +1,11 @@
 const express = require('express');
 const router = express.Router();
 const query = require('../../query');
-const validator = require('../validator')
 
 router.get('/', async (req, res) => {
   const dbQuery = `SELECT * FROM movie`;
-  const { accept } = req.body;
-  const xmlResponse = accept?.includes('application/xml') || null;
+  const acceptHeader = req.get('accept');
+  const xmlResponse = acceptHeader && acceptHeader.includes('application/xml');
 
   try {
     const results = await query.run(dbQuery, !xmlResponse);

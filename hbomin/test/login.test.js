@@ -10,7 +10,6 @@ describe('POST /login', () => {
       .send({
         email: 'test@test.test',
         password: 'test',
-        accept: 'application/json',
       });
 
     expect(response.status).toBe(200);
@@ -25,7 +24,6 @@ describe('POST /login', () => {
       .send({
         email: 'test@test.test',
         password: 'wrongPass',
-        accept: 'application/json',
       });
 
     expect(response.status).toBe(401);
@@ -39,7 +37,6 @@ describe('POST /login', () => {
       .send({
         email: 'malformedemail', 
         password: 'test',
-        accept: 'application/json',
       });
 
     expect(response.status).toBe(401);
@@ -52,7 +49,6 @@ describe('POST /login', () => {
       .post('/login')
       .send({
         email: 'malformedemail', 
-        accept: 'application/json',
       });
 
     expect(response.status).toBe(401);
@@ -64,22 +60,10 @@ describe('POST /login', () => {
       .post('/login')
       .send({
         password: 'test',
-        accept: 'application/json',
       });
 
     expect(response.status).toBe(401);
     expect(response.body.error).toBe('Invalid username or password');
-  });
-
-  it('Return 400 for invalid data (only accept header)', async () => {
-    const response = await request(app)
-      .post('/login')
-      .send({
-        accept: 'application/json'
-      });
-
-    expect(response.status).toBe(400);
-    expect(response.body.error).toBe('Invalid data, body data should be present');
   });
 
   // Empty request body
@@ -88,6 +72,6 @@ describe('POST /login', () => {
       .post('/login');
 
     expect(response.status).toBe(400);
-    expect(response.body.error).toBe('Invalid data');
+    expect(response.body.error).toBe('Invalid data, body data should be present');
   });
 });

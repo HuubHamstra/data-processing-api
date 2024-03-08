@@ -1,13 +1,12 @@
 const express = require('express');
 const router = express.Router();
 const query = require('../../query');
-const validator = require('../validator')
 
 // Handle GET request for login
 router.get('/', async (req, res) => {
   const dbQuery = `SELECT * FROM watchlist_view`;
-  const accept = req.headers.accept || 'application/json';
-  const xmlResponse = accept.includes('application/xml');
+  const acceptHeader = req.get('accept');
+  const xmlResponse = acceptHeader && acceptHeader.includes('application/xml');
 
   try {
     const results = await query.run(dbQuery, !xmlResponse);

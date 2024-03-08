@@ -7,7 +7,6 @@ describe('POST /register', () => {
     const response = await request(app)
       .post('/register')
       .send({
-        accept: 'application/json',
         fullname: 'Test Account ',
         email: 'test@test.test',
         password: 'test',
@@ -22,7 +21,6 @@ describe('POST /register', () => {
     const response = await request(app)
       .post('/register')
       .send({
-        accept: 'application/json',
         fullname: 'Test Account ',
         email: 'test@test.test',
       });
@@ -36,7 +34,6 @@ describe('POST /register', () => {
     const response = await request(app)
       .post('/register')
       .send({
-        accept: 'application/json',
         fullname: 'Test Account',
         email: 'invalid-email-format', 
         password: 'test',
@@ -51,7 +48,7 @@ describe('POST /register', () => {
       .post('/register');
   
     expect(response.status).toBe(400);
-    expect(response.body.error).toBe('Invalid data');
+    expect(response.body.error).toBe('Invalid data, body data should be present');
   });
   
 });

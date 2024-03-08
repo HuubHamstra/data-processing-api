@@ -9,9 +9,10 @@ router.post('/', async (req, res) => {
     return;
   }
 
-  const { profileId, progressId, movieId, episodeId, unixTime, accept } = req.body;
+  const { profileId, progressId, movieId, episodeId, unixTime } = req.body;
   const isEpisode = typeof movieId === 'undefined';
-  const xmlResponse = accept?.includes('application/xml') || null;
+  const acceptHeader = req.get('accept');
+  const xmlResponse = acceptHeader && acceptHeader.includes('application/xml');
   const dbQuery = `CALL update_progress(${profileId}, ${isEpisode}, ${progressId}, ${movieId}, ${episodeId}, FROM_UNIXTIME(${unixTime} / 1000));`;
 
   try {

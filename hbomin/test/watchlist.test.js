@@ -7,7 +7,6 @@ describe('POST /watchlist/get-watchlist/', () => {
       .post('/watchlist/get-watchlist/')
       .send({
         profileId: 57,
-        accept: 'application/json',
       });
 
     expect(response.status).toBe(200);

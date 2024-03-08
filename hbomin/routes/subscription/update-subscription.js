@@ -9,8 +9,9 @@ router.post('/', async (req, res) => {
     return;
   }
 
-  const { accountId, subscriptionId, accept } = req.body;
-  const xmlResponse = accept?.includes('application/xml') || null;
+  const { accountId, subscriptionId } = req.body;
+  const acceptHeader = req.get('accept');
+  const xmlResponse = acceptHeader && acceptHeader.includes('application/xml');
   const dbQuery = `CALL change_subscription(${accountId}, ${subscriptionId});`;
 
   try {

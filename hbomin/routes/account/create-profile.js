@@ -14,12 +14,13 @@ router.post('/', async (req, res) => {
     return;
   }
 
-  var { accountId, profileName, profileImage, age, language, viewMovies, viewSeries, minAge, accept } = req.body;
+  var { accountId, profileName, profileImage, age, language, viewMovies, viewSeries, minAge } = req.body;
   language = language ?? 0;
   viewMovies = viewMovies ?? 1;
   viewSeries = viewSeries ?? 1;
   minAge = minAge ?? age;
-  const xmlResponse = accept?.includes('application/xml') || null;
+  const acceptHeader = req.get('accept');
+  const xmlResponse = acceptHeader && acceptHeader.includes('application/xml');
   const dbQuery = `CALL create_profile(${accountId}, '${profileName}', '${profileImage}', ${age}, ${language}, ${viewMovies}, ${viewSeries}, ${minAge});`;
 
   try {

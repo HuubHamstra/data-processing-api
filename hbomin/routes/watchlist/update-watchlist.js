@@ -9,8 +9,9 @@ router.post('/', async (req, res) => {
     return;
   }
 
-  const { profileId, isEpisode, watchId, shouldRemove, accept } = req.body;
-  const xmlResponse = accept?.includes('application/xml') || null;
+  const { profileId, isEpisode, watchId, shouldRemove } = req.body;
+  const acceptHeader = req.get('accept');
+  const xmlResponse = acceptHeader && acceptHeader.includes('application/xml');
   const dbQuery = `CALL ${shouldRemove ? "remove_from_watchlist" : "add_to_watchlist"}(${profileId}, ${isEpisode}, ${watchId});`;
 
   try {

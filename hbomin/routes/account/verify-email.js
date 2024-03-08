@@ -4,6 +4,7 @@ const { promisify } = require('util');
 const jwt = require('jsonwebtoken');
 const { secretKey } = require('../config'); // Import shared configurations
 const query = require('../../query');
+const validator = require('../validator');
 
 async function authenticateToken(token) {
   if (token == null) {
@@ -27,10 +28,25 @@ router.get('/', async (req, res) => {
   try {
     await authenticateToken(token).then(user => {
       if (typeof user === 'number') {
-        res.sendStatus(user);
+        switch (user) {
+          case 401:
+            res.status(401).send({ error: 'Unauthorized, token is missing' });
+            break;
+          case 403:
+            res.status(403).send({ error: 'Forbidden, token is invalid' });
+            break;
+          default:
+            res.status(500).send({ error: 'Internal Server Error' });
+            break;
+        }
       }
       else {
         const email = user["email"];
+
+        if (!validator.emailValidation(res, email)) {
+          return;
+        }
+
         try {
           const dbQuery = `CALL validate_email('${email}')`
           query.run(dbQuery, true, res);
@@ -38,7 +54,7 @@ router.get('/', async (req, res) => {
         catch {
                     res.status(500).send({ error: 'Internal Server Error' });
         }
-        res.status(200).send(email + " is geverifieerd.");
+        res.status(200).send({ result: email + " is geverifieerd." });
       }
     });
   }

@@ -11,6 +11,7 @@ describe('POST /account/invite-new-member', () => {
       .post('/account/invite-new-member')
       .send({
         profileName: 'Test Profile',
+        url: 'https://example.com/invite',
         recipient: 'kevinstenden1@gmail.com'
       });
 
@@ -27,7 +28,7 @@ describe('POST /account/invite-new-member', () => {
       });
 
     expect(response.status).toBe(400);
-    expect(response.body.error).toBe('Invalid email address');
+    expect(response.body.error).toBe('Invalid data, email is not valid');
   }, 10000);
   
   it('Returns a error for invalid email / Empty mail', async () => {
@@ -38,7 +39,7 @@ describe('POST /account/invite-new-member', () => {
       });
 
     expect(response.status).toBe(400);
-    expect(response.body.error).toBe('Invalid email address');
+    expect(response.body.error).toBe('Invalid data, email is not valid');
   }, 10000);
   
   it('Returns error for empty body', async () => {

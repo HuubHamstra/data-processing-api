@@ -1,6 +1,16 @@
+const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
 function bodyValidation(req, res) {
   if (req.body.constructor === Object && Object.keys(req.body).length === 0) {
     res.status(400).send({ error: 'Invalid data, body data should be present' });
+    return false;
+  }
+  return true;
+}
+
+function emailValidation(res, email) {
+  if (!emailPattern.test(email)) {
+    res.status(400).send({ error: 'Invalid data, email is not valid' });
     return false;
   }
   return true;
@@ -78,4 +88,4 @@ function isObject(input) {
   return !isNull(input) && !isUndefined(input) && typeof input === 'object' && input !== null && !Array.isArray(input);
 }
 
-module.exports = { bodyValidation, dataValidation, rangeValidation, unsignedValidation };
+module.exports = { bodyValidation, emailValidation, dataValidation, rangeValidation, unsignedValidation };

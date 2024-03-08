@@ -9,12 +9,13 @@ router.post('/', async (req, res) => {
   }
 
   const { profileName, recipient, url } = req.body;
-  
-  // Email validation regex pattern
-  const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-  if (!emailPattern.test(recipient)) {
-    return res.status(400).send({ error: 'Invalid email address' });
+  if (!validator.emailValidation(res, recipient)) {
+    return;
+  }
+
+  if (!validator.dataValidation(res, profileName, 'string') || !validator.dataValidation(res, url, 'string')) {
+    return;
   }
 
   try {

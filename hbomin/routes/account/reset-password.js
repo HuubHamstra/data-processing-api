@@ -53,11 +53,8 @@ router.post('/', async (req, res) => {
 
   var { email, password } = req.body;
 
-  // Email validation regex pattern
-  const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-  if (!emailPattern.test(email)) {
-    return res.status(400).send({ error: 'Invalid email address' });
+  if (!validator.emailValidation(res, email)) {
+    return;
   }
 
   let isGenerated = false;
@@ -109,7 +106,14 @@ router.get('/', async (req, res) => {
 
   await authenticateToken(token).then(async user => {
     if (typeof user === 'number') {
-      res.sendStatus(user);
+      switch (user) {
+        case 401:
+          res.status(401).send({ error: 'Unauthorized, token is missing' });
+          break;
+        case 403:
+          res.status(403).send({ error: 'Forbidden, token is invalid' });
+          break;
+      }
     }
     else {
       const email = user["email"];
@@ -119,7 +123,7 @@ router.get('/', async (req, res) => {
         if (await query.run(dbQuery, true, res)) {
           res.sendStatus(200);
         } else {
-          res.status(400).send({ error: 'Invalid data' });
+          res.status(400).send({ error: 'Invalid data, password could not be updated' });
         }
       } catch (error) {
                 res.status(500).send({ error: 'Internal Server Error' });

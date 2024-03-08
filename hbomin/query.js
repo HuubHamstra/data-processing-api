@@ -34,7 +34,7 @@ async function outputJSON(dbQuery) {
 async function outputXML(dbQuery) {
   try {
     const results = await runQuery(dbQuery);
-    const rowDataPacket = results[0]; // Access the RowDataPacket
+    const rowDataPacket = results[0] ?? {}; // Get the first RowDataPacket
     const xmlObject = { results: rowDataPacket }; // Construct XML object with RowDataPacket
     const xmlBuilder = new xml2js.Builder();
     const xmlString = xmlBuilder.buildObject(xmlObject);

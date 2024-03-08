@@ -70,8 +70,7 @@ router.post('/', async (req, res) => {
     
         mail.transporter.sendMail(mailOptions, function (error, info) {
           if (error) {
-            console.error('Error sending email:', error);
-            res.status(500).send({ error: 'Internal Server Error' });
+                        res.status(500).send({ error: 'Internal Server Error' });
           }
           else {
             res.status(201).send({ accessToken, refreshToken });
@@ -80,12 +79,10 @@ router.post('/', async (req, res) => {
       }
     })
       .catch(err => {
-        console.error('Error hashing password:', err);
-        res.status(500).send({ error: 'Internal Server Error' });
+                res.status(500).send({ error: 'Internal Server Error' });
       });
   } catch (error) {
-    console.error(error);
-    res.status(500).send({ error: 'Internal Server Error' });
+        res.status(500).send({ error: 'Internal Server Error' });
   }
 });
 

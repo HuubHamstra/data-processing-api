@@ -12,8 +12,7 @@ router.get('/', async (req, res) => {
     const results = await query.run(dbQuery, !xmlResponse);
     res.send({ results: results });
   } catch (error) {
-    console.error('Fout bij het uitvoeren van de query: ', error);
-    res.status(500).send({ error: 'An error occurred' });
+        res.status(500).send({ error: 'An error occurred' });
   }
 });
 

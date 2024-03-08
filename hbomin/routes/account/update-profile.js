@@ -26,8 +26,7 @@ router.post('/', async (req, res) => {
       res.status(400).send({ error: 'Invalid data' });
     }
   } catch (error) {
-    console.error(error);
-    res.status(500).send({ error: 'Internal Server Error' });
+        res.status(500).send({ error: 'Internal Server Error' });
   }
 });
 

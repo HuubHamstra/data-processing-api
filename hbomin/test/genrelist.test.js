@@ -12,9 +12,9 @@ describe('GET /genre/genrelist', () => {
   it('Responds with containing a list of genres', async () => {
     const response = await request(app).get('/genre/genrelist');
     expect(response.status).toBe(200);
-    expect(response.body).toHaveProperty('results');
+    expect(response.body.length).toBeGreaterThanOrEqual(0);
     
-    const genreList = response.body.results;
+    const genreList = response.body;
     expect(Array.isArray(genreList)).toBe(true);
 
     // Check if the title of the genres matches the expected values

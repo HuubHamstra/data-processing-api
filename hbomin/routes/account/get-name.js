@@ -20,8 +20,7 @@ router.get('/', async (req, res) => {
       res.status(400).send({ error: 'Invalid data' });
     }
   } catch (error) {
-    console.error('Error in GET /account/get-name:', error);
-    res.status(500).send({ error: 'Internal Server Error' });
+        res.status(500).send({ error: 'Internal Server Error' });
   }
 });
 

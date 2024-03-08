@@ -27,8 +27,7 @@ async function outputJSON(dbQuery) {
     const results = await runQuery(dbQuery);
     return results;
   } catch (error) {
-    console.error('Fout bij het uitvoeren van de query: ', error);
-    throw error; // Re-throw the error to be caught by the caller
+        throw error; // Re-throw the error to be caught by the caller
   }
 }
 
@@ -40,8 +39,7 @@ async function outputXML(dbQuery) {
     const xmlString = xmlBuilder.buildObject({ results: results });
     return xmlString;
   } catch (error) {
-    console.error('Fout bij het uitvoeren van de query: ', error);
-    throw error; // Re-throw the error to be caught by the caller
+        throw error; // Re-throw the error to be caught by the caller
   }
 }
 

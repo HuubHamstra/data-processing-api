@@ -24,8 +24,7 @@ router.get('/', authenticateToken, async (req, res) => {
             res.status(500).send({ error: 'Invalid or missing daily income value' });
         }
     } catch (error) {
-        console.error('Fout bij het uitvoeren van de query: ', error);
-        res.status(500).send({ error: 'An error occurred' });
+                res.status(500).send({ error: 'An error occurred' });
     }
 });
 

@@ -21,6 +21,14 @@ router.post('/', async (req, res) => {
   minAge = minAge ?? age;
   const acceptHeader = req.get('accept');
   const xmlResponse = acceptHeader && acceptHeader.includes('application/xml');
+
+  if (!validator.dataValidation(res, accountId, 'number') || !validator.dataValidation(res, profileName, 'string') || !validator.dataValidation(res, profileImage, 'string') || !validator.dataValidation(res, age, 'number') || !validator.dataValidation(res, language, 'number') || !validator.dataValidation(res, viewMovies, 'number') || !validator.dataValidation(res, viewSeries, 'number') || !validator.dataValidation(res, minAge, 'number')) {
+    return;
+  }
+  if (!validator.unsignedValidation(res, age) || !validator.unsignedValidation(res, language) || !validator.rangeValidation(res, viewMovies, 0, 1) || !validator.rangeValidation(res, viewSeries, 0, 1) || !validator.unsignedValidation(res, minAge)) {
+    return;
+  }
+  
   if (xmlResponse) {
     res.setHeader('content-type', 'application/xml');
   };

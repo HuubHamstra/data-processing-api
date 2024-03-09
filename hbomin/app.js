@@ -23,7 +23,6 @@ var getNameRouter = require('./routes/account/get-name');
 // Movie routes
 var movieStopRouter = require('./routes/movie/stop-movie');
 var movieListRouter = require('./routes/movie/movielist');
-var movieCountRouter = require('./routes/movie/movie-counter');
 var movieTableRouter = require('./routes/movie/movietable');
 var createMovieRouter = require('./routes/movie/create-movie');
 var updateMovieRouter = require('./routes/movie/update-movie');
@@ -82,7 +81,6 @@ app.use("/account/get-name", getNameRouter);
 // Movie use
 app.use("/movie/stop-movie", movieStopRouter);
 app.use("/movie/movielist", movieListRouter);
-app.use("/movie/movie-counter", movieCountRouter);
 app.use("/movie/movietable", movieTableRouter);
 app.use("/movie/create-movie", createMovieRouter);
 app.use("/movie/update-movie", updateMovieRouter);

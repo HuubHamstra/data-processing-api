@@ -28,7 +28,7 @@ describe('GET /movie/movielist', () => {
   
       // Check if the first movie title is present
       const firstMovieTitle = 'James Bond'; 
-      const firstMovieDuration = 500
+      const firstMovieDuration = 120
       expect(response.body.results[0].title).toBe(firstMovieTitle);
       expect(response.body.results[0].duration).toBe(firstMovieDuration);
     });

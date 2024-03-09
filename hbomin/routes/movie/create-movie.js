@@ -33,11 +33,11 @@ router.post('/', async (req, res) => {
     if (movie) {
       if (xmlResponse) {
         res.setHeader('content-type', 'application/xml');
-        res.status(202).send(movie);
+        res.status(201).send(movie);
       }
       else
       {
-        res.status(202).send({ movie });
+        res.status(201).send({ movie });
       }
     } else {
       res.status(400).send({ error: 'Invalid data, movie could not be created' });

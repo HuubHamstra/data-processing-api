@@ -26,9 +26,9 @@ router.post('/', async (req, res) => {
     if (genre) {
       if (xmlResponse) {
         res.setHeader('content-type', 'application/xml');
-        res.status(202).send(genre);
+        res.status(201).send(genre);
       } else {
-        res.status(202).send({ genre });
+        res.status(201).send({ genre });
       }
     } else {
       res.status(400).send({ error: 'Invalid data, genre could not be created' });

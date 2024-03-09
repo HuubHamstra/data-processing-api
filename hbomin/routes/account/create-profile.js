@@ -37,11 +37,11 @@ router.post('/', async (req, res) => {
     if (profile) {
       if (xmlResponse) {
         res.setHeader('content-type', 'application/xml');
-        res.status(202).send(profile);
+        res.status(201).send(profile);
       }
       else
       {
-        res.status(202).send({ profile });
+        res.status(201).send({ profile });
       }
     } else {
       res.status(400).send({ error: 'Invalid data, profile could not be created' });

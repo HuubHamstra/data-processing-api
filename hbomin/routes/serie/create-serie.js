@@ -29,9 +29,9 @@ router.post('/', async (req, res) => {
     if (series) {
       if (xmlResponse) {
         res.setHeader('content-type', 'application/xml');
-        res.status(202).send(series);
+        res.status(201).send(series);
       } else {
-        res.status(202).send({ series });
+        res.status(201).send({ series });
       }
     } else {
       res.status(400).send({ error: 'Invalid data, series could not be created' });

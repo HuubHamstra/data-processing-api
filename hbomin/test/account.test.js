@@ -106,7 +106,7 @@ describe('POST /account/create-profile', () => {
           minAge: 18,
         });
   
-      expect(response.status).toBe(202);
+      expect(response.status).toBe(201);
       expect(response.body).toHaveProperty('profile');
     });
 

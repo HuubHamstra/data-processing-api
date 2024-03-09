@@ -16,7 +16,7 @@ router.get('/', async (req, res) => {
 
   try {
     const result = await query.run(dbQuery, !xmlResponse);
-    
+
     if (xmlResponse) {
       res.set('Content-Type', 'application/xml');
       res.status(200).send(result);
@@ -29,7 +29,7 @@ router.get('/', async (req, res) => {
       }
     }
   } catch (error) {
-        res.status(500).send({ error: 'Internal Server Error' });
+    res.status(500).send({ error: 'Internal Server Error' });
   }
 });
 

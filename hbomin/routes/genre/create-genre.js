@@ -17,7 +17,7 @@ router.post('/', async (req, res) => {
   if (!validator.dataValidation(res, title, 'string') || !validator.dataValidation(res, description, 'string')) {
     return;
   }
-  
+
   const dbQuery = `INSERT INTO \`genre\` (\`genre_id\`, \`title\`, \`description\`) VALUES (NULL, '${title}', '${description}');`;
 
   try {

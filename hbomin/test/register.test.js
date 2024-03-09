@@ -1,8 +1,8 @@
 const request = require('supertest');
-const app = require('../app'); 
+const app = require('../app');
 
 describe('POST /register', () => {
-    
+
   it('Registers a new user successfully', async () => {
     const response = await request(app)
       .post('/register')
@@ -35,20 +35,20 @@ describe('POST /register', () => {
       .post('/register')
       .send({
         fullname: 'Test Account',
-        email: 'invalid-email-format', 
+        email: 'invalid-email-format',
         password: 'test',
       });
-  
+
     expect(response.status).toBe(400);
     expect(response.body.error).toBe('Invalid email format');
   });
-  
+
   it('Returns 400 for invalid data / empty body', async () => {
     const response = await request(app)
       .post('/register');
-  
+
     expect(response.status).toBe(400);
     expect(response.body.error).toBe('Invalid data, body data should be present');
   });
-  
+
 });

@@ -77,15 +77,14 @@ router.post('/', async (req, res) => {
         res.setHeader('content-type', 'application/xml');
         res.status(200).send(movie);
       }
-      else
-      {
+      else {
         res.status(200).send({ movie: "Movie successfully updated" });
       }
     } else {
       res.status(400).send({ error: 'Invalid data, movie could not be updated' });
     }
   } catch (error) {
-        res.status(500).send({ error: 'Internal Server Error' });
+    res.status(500).send({ error: 'Internal Server Error' });
   }
 });
 

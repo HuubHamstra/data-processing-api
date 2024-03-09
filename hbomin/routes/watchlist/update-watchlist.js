@@ -25,7 +25,7 @@ router.post('/', async (req, res) => {
   if (!validator.dataValidation(res, shouldRemove, 'boolean')) {
     return;
   }
-  
+
   const dbQuery = `CALL ${shouldRemove ? "remove_from_watchlist" : "add_to_watchlist"}(${profileId}, ${isEpisode}, ${watchId});`;
 
   try {
@@ -43,7 +43,7 @@ router.post('/', async (req, res) => {
       res.status(400).send({ error: 'Invalid data, no watchlist found with this id' });
     }
   } catch (error) {
-        res.status(500).send({ error: 'Internal Server Error' });
+    res.status(500).send({ error: 'Internal Server Error' });
   }
 });
 

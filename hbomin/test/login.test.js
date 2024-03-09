@@ -2,7 +2,7 @@ const request = require('supertest');
 const app = require('../app');
 
 describe('POST /login', () => {
-    
+
   // Successfull login
   it('Logs in successfully with correct credentials', async () => {
     const response = await request(app)
@@ -35,7 +35,7 @@ describe('POST /login', () => {
     const response = await request(app)
       .post('/login')
       .send({
-        email: 'malformedemail', 
+        email: 'malformedemail',
         password: 'test',
       });
 
@@ -48,7 +48,7 @@ describe('POST /login', () => {
     const response = await request(app)
       .post('/login')
       .send({
-        email: 'malformedemail', 
+        email: 'malformedemail',
       });
 
     expect(response.status).toBe(401);

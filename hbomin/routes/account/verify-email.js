@@ -18,7 +18,7 @@ async function authenticateToken(token) {
     return user;
   }
   catch (err) {
-        return 403;
+    return 403;
   }
 }
 
@@ -52,7 +52,7 @@ router.get('/', async (req, res) => {
           query.run(dbQuery, true, res);
         }
         catch {
-                    res.status(500).send({ error: 'Internal Server Error' });
+          res.status(500).send({ error: 'Internal Server Error' });
         }
         res.status(200).send({ result: email + " is geverifieerd." });
       }

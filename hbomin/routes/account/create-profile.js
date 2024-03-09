@@ -5,7 +5,7 @@ const query = require('../../query');
 
 // Handle POST request for login
 router.post('/', async (req, res) => {
-  
+
   if (!req.body.profileName || !req.body.age) {
     return res.status(400).send({ error: 'Missing required fields' });
   }
@@ -28,7 +28,7 @@ router.post('/', async (req, res) => {
   if (!validator.unsignedValidation(res, age) || !validator.unsignedValidation(res, language) || !validator.rangeValidation(res, viewMovies, 0, 1) || !validator.rangeValidation(res, viewSeries, 0, 1) || !validator.unsignedValidation(res, minAge)) {
     return;
   }
-  
+
   const dbQuery = `CALL create_profile(${accountId}, '${profileName}', '${profileImage}', ${age}, ${language}, ${viewMovies}, ${viewSeries}, ${minAge});`;
 
   try {
@@ -39,15 +39,14 @@ router.post('/', async (req, res) => {
         res.setHeader('content-type', 'application/xml');
         res.status(201).send(profile);
       }
-      else
-      {
+      else {
         res.status(201).send({ profile });
       }
     } else {
       res.status(400).send({ error: 'Invalid data, profile could not be created' });
     }
   } catch (error) {
-        res.status(500).send({ error: 'Internal Server Error' });
+    res.status(500).send({ error: 'Internal Server Error' });
   }
 });
 

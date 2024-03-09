@@ -16,7 +16,7 @@ describe('GET /finance/daily-income?date=2024-01-21T14:55:40.483Z', () => {
     // Set the authorization header with the JWT token
     const response = await request(app)
       .get('/finance/daily-income?date=2024-01-21T22:42:23.740Z')
-      .set('authorization', `Bearer ${authToken}`); 
+      .set('authorization', `Bearer ${authToken}`);
 
     expect(response.status).toBe(200);
     expect(response.body).toHaveProperty('dailyIncome');
@@ -27,7 +27,7 @@ describe('GET /finance/daily-income?date=2024-01-21T14:55:40.483Z', () => {
   it('Responds with an error for no income', async () => {
     const response = await request(app)
       .get('/finance/daily-income?date=2024-01-01T22:42:23.740Z')
-      .set('authorization', `Bearer ${authToken}`); 
+      .set('authorization', `Bearer ${authToken}`);
 
 
     expect(response.status).toBe(500);
@@ -47,8 +47,8 @@ describe('GET /finance/daily-income?date=2024-01-21T14:55:40.483Z', () => {
 
   it('Responds with 403 forbidden - Invalid token', async () => {
     const response = await request(app)
-    .get('/finance/daily-income?date=2024-01-01T22:42:23.740Z')
-    .set('authorization', `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6ImR1bW15X3VzZXIiLCJwYXNzd29yZCI6InRlc3QxMjM0IiwiaWF0IjoxNjQ3NjQ0ODg2LCJleHAiOjE2NDc2NDg0ODZ9.VANXb8hjazOCvyC-C6YReHtrKqH5C06RY5VusWnJXfI`); 
+      .get('/finance/daily-income?date=2024-01-01T22:42:23.740Z')
+      .set('authorization', `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6ImR1bW15X3VzZXIiLCJwYXNzd29yZCI6InRlc3QxMjM0IiwiaWF0IjoxNjQ3NjQ0ODg2LCJleHAiOjE2NDc2NDg0ODZ9.VANXb8hjazOCvyC-C6YReHtrKqH5C06RY5VusWnJXfI`);
 
 
     expect(response.status).toBe(403);
@@ -61,7 +61,7 @@ describe('GET /finance/total-income', () => {
   it('Responds with total income', async () => {
     const response = await request(app)
       .get('/finance/total-income')
-      .set('authorization', `Bearer ${authToken}`); 
+      .set('authorization', `Bearer ${authToken}`);
 
     expect(response.status).toBe(200);
     expect(response.body).toHaveProperty('totalIncome');
@@ -81,7 +81,7 @@ describe('GET /finance/total-income', () => {
   it('Responds with 403 forbidden - Invalid token', async () => {
     const response = await request(app)
       .get('/finance/total-income')
-      .set('authorization', `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6ImR1bW15X3VzZXIiLCJwYXNzd29yZCI6InRlc3QxMjM0IiwiaWF0IjoxNjQ3NjQ0ODg2LCJleHAiOjE2NDc2NDg0ODZ9.VANXb8hjazOCvyC-C6YReHtrKqH5C06RY5VusWnJXfI`); 
+      .set('authorization', `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6ImR1bW15X3VzZXIiLCJwYXNzd29yZCI6InRlc3QxMjM0IiwiaWF0IjoxNjQ3NjQ0ODg2LCJleHAiOjE2NDc2NDg0ODZ9.VANXb8hjazOCvyC-C6YReHtrKqH5C06RY5VusWnJXfI`);
 
 
     expect(response.status).toBe(403);

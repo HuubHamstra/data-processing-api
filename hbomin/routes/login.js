@@ -41,14 +41,14 @@ router.post('/', async (req, res) => {
           res.status(401).send({ error: 'Invalid username or password' });
         }
       })
-      .catch(() => {
-        res.status(401).send({ error: 'Invalid username or password' });
-      });
+        .catch(() => {
+          res.status(401).send({ error: 'Invalid username or password' });
+        });
     } else {
       res.status(401).send({ error: 'Invalid username or password' });
     }
   } catch (error) {
-        res.status(500).send({ error: 'Internal Server Error' });
+    res.status(500).send({ error: 'Internal Server Error' });
   }
 });
 

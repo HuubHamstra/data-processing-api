@@ -28,7 +28,7 @@ router.post('/', async (req, res) => {
   if (!validator.dataValidation(res, unixTime, 'number') || !validator.unsignedValidation(res, unixTime)) {
     return;
   }
-    
+
   const acceptHeader = req.get('accept');
   const xmlResponse = acceptHeader && acceptHeader.includes('application/xml');
   const dbQuery = `CALL update_progress(${profileId}, ${isEpisode}, ${progressId}, ${movieId}, ${episodeId}, FROM_UNIXTIME(${unixTime} / 1000));`;
@@ -48,7 +48,7 @@ router.post('/', async (req, res) => {
       res.status(400).send({ error: 'Invalid data, no progress found with this id' });
     }
   } catch (error) {
-        res.status(500).send({ error: 'Internal Server Error' });
+    res.status(500).send({ error: 'Internal Server Error' });
   }
 });
 

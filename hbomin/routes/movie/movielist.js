@@ -17,7 +17,7 @@ router.get('/', async (req, res) => {
       res.status(200).send({ results: results });
     }
   } catch (error) {
-        res.status(500).send({ error: 'An error occurred' });
+    res.status(500).send({ error: 'An error occurred' });
   }
 });
 

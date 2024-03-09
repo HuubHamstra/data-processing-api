@@ -9,12 +9,12 @@ router.post('/', (req, res) => {
   if (!validator.bodyValidation(req, res)) {
     return;
   }
-  
+
   const { email, refreshToken } = req.body;
 
   // Validate the refresh token
   if (!isValidRefreshToken(email, refreshToken)) {
-    return res.status(401).send({ error: 'Invalid refresh token'});
+    return res.status(401).send({ error: 'Invalid refresh token' });
   }
 
   // If the refresh token is valid, issue a new access token
@@ -24,8 +24,8 @@ router.post('/', (req, res) => {
 
 // Function to validate the refresh token
 function isValidRefreshToken(email, providedRefreshToken) {
-    // Check if the stored token matches the provided token
-    return refreshTokens[email] === providedRefreshToken;
+  // Check if the stored token matches the provided token
+  return refreshTokens[email] === providedRefreshToken;
 }
 
 module.exports = router;

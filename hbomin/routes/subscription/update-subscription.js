@@ -19,7 +19,7 @@ router.post('/', async (req, res) => {
   if (!validator.dataValidation(res, subscriptionId, 'number') || !validator.unsignedValidation(res, subscriptionId)) {
     return;
   }
-  
+
   const dbQuery = `CALL change_subscription(${accountId}, ${subscriptionId});`;
 
   try {
@@ -37,7 +37,7 @@ router.post('/', async (req, res) => {
       res.status(400).send({ error: 'Invalid data, no subscription found with this id' });
     }
   } catch (error) {
-        res.status(500).send({ error: 'Internal Server Error' });
+    res.status(500).send({ error: 'Internal Server Error' });
   }
 });
 

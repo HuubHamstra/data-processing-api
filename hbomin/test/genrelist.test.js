@@ -1,5 +1,5 @@
 const request = require('supertest');
-const app = require('../app'); 
+const app = require('../app');
 
 describe('GET /genre/genrelist', () => {
   // Respond with status code 200
@@ -11,7 +11,7 @@ describe('GET /genre/genrelist', () => {
   it('Responds with status code 200 in xml format', async () => {
     const response = await request(app).get('/genre/genrelist')
       .set('accept', 'application/xml');
-      
+
     expect(response.status).toBe(200);
     expect(response.headers['content-type']).toMatch('application/xml')
   });
@@ -21,7 +21,7 @@ describe('GET /genre/genrelist', () => {
     const response = await request(app).get('/genre/genrelist');
     expect(response.status).toBe(200);
     expect(response.body.length).toBeGreaterThanOrEqual(0);
-    
+
     const genreList = response.body;
     expect(Array.isArray(genreList)).toBe(true);
 

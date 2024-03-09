@@ -5,7 +5,7 @@ const query = require('../../query');
 
 // Handle POST request for creating a movie
 router.post('/', async (req, res) => {
-  
+
   if (!req.body.title || !req.body.duration || !req.body.description || !req.body.definitionTypeId || !req.body.genreId) {
     return res.status(400).send({ error: 'Missing required fields' });
   }
@@ -24,7 +24,7 @@ router.post('/', async (req, res) => {
   if (!validator.unsignedValidation(res, duration) || !validator.unsignedValidation(res, definitionTypeId) || !validator.unsignedValidation(res, genreId)) {
     return;
   }
-  
+
   const dbQuery = `INSERT INTO \`movie\` (\`movie_id\`, \`title\`, \`duration\`, \`description\`, \`definition_type_id\`, \`genre_id\`) VALUES (NULL, '${title}', '${duration}', '${description}', '${definitionTypeId}', '${genreId}');`;
 
   try {
@@ -35,15 +35,14 @@ router.post('/', async (req, res) => {
         res.setHeader('content-type', 'application/xml');
         res.status(201).send(movie);
       }
-      else
-      {
+      else {
         res.status(201).send({ movie });
       }
     } else {
       res.status(400).send({ error: 'Invalid data, movie could not be created' });
     }
   } catch (error) {
-        res.status(500).send({ error: 'Internal Server Error' });
+    res.status(500).send({ error: 'Internal Server Error' });
   }
 });
 

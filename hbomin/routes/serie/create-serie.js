@@ -20,7 +20,7 @@ router.post('/', async (req, res) => {
   if (!validator.unsignedValidation(res, genreId)) {
     return;
   }
-  
+
   const dbQuery = `INSERT INTO \`series\` (\`series_id\`, \`name\`, \`description\`, \`genre_id\`) VALUES (NULL, '${name}', '${description}', '${genreId}');`;
 
   try {

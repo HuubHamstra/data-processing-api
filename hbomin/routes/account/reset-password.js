@@ -21,7 +21,7 @@ async function authenticateToken(token) {
     return user;
   }
   catch (err) {
-        return 403;
+    return 403;
   }
 }
 
@@ -85,7 +85,7 @@ router.post('/', async (req, res) => {
 
       mail.transporter.sendMail(mailOptions, function (error, info) {
         if (error) {
-                    res.status(500).send({ error: 'Internal Server Error'} );
+          res.status(500).send({ error: 'Internal Server Error' });
         }
         else {
           res.status(200).send({ accessToken, refreshToken });
@@ -93,10 +93,10 @@ router.post('/', async (req, res) => {
       });
     })
       .catch(err => {
-                res.status(500).send({ error: 'Internal Server Error' });
+        res.status(500).send({ error: 'Internal Server Error' });
       });
   } catch (error) {
-        res.status(500).send({ error: 'Internal Server Error'} );
+    res.status(500).send({ error: 'Internal Server Error' });
   }
 });
 
@@ -126,7 +126,7 @@ router.get('/', async (req, res) => {
           res.status(400).send({ error: 'Invalid data, password could not be updated' });
         }
       } catch (error) {
-                res.status(500).send({ error: 'Internal Server Error' });
+        res.status(500).send({ error: 'Internal Server Error' });
       }
     }
   });

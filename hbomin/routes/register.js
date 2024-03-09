@@ -63,17 +63,17 @@ router.post('/', async (req, res) => {
 
         // Send validation email
         const url = req.protocol + '://' + req.get('host');
-        
+
         const mailOptions = {
           from: 'hbomin.api@gmail.com',
           to: email,
           subject: `Valideer uw E-Mail adres voor HBO-Min`,
           text: `Validatie E-Mail URL: ${url}/account/verify-email?token=${accessToken}`
         };
-    
+
         mail.transporter.sendMail(mailOptions, function (error, info) {
           if (error) {
-                        res.status(500).send({ error: 'Internal Server Error' });
+            res.status(500).send({ error: 'Internal Server Error' });
           }
           else {
             res.status(201).send({ accessToken, refreshToken });
@@ -82,10 +82,10 @@ router.post('/', async (req, res) => {
       }
     })
       .catch(err => {
-                res.status(500).send({ error: 'Internal Server Error' });
+        res.status(500).send({ error: 'Internal Server Error' });
       });
   } catch (error) {
-        res.status(500).send({ error: 'Internal Server Error' });
+    res.status(500).send({ error: 'Internal Server Error' });
   }
 });
 

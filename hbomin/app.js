@@ -23,12 +23,16 @@ var getNameRouter = require('./routes/account/get-name');
 // Movie routes
 var movieStopRouter = require('./routes/movie/stop-movie');
 var movieListRouter = require('./routes/movie/movielist');
-var movieCounterRouter = require('./routes/movie/movie-counter');
+var movieCountRouter = require('./routes/movie/movie-counter');
 var movieTableRouter = require('./routes/movie/movietable');
+var createMovieRouter = require('./routes/movie/create-movie');
+var updateMovieRouter = require('./routes/movie/update-movie');
 
 // Serie routes
 var serieListRouter = require('./routes/serie/serielist');
 var serieTableRouter = require('./routes/serie/serietable');
+var createSerieRouter = require('./routes/serie/create-serie');
+var updateSerieRouter = require('./routes/serie/update-serie');
 
 // Subscription routes
 var subscriptionUpdateRouter = require('./routes/subscription/update-subscription');
@@ -39,6 +43,8 @@ var watchlistUpdateRouter = require('./routes/watchlist/update-watchlist');
 
 // Genre routes
 var genreListRouter = require('./routes/genre/genrelist');
+var createGenreRouter = require('./routes/genre/create-genre');
+var updateGenreRouter = require('./routes/genre/update-genre');
 
 // Finance routes
 var dailyIncomeRouter = require('./routes/finance/get_daily_income');
@@ -76,12 +82,16 @@ app.use("/account/get-name", getNameRouter);
 // Movie use
 app.use("/movie/stop-movie", movieStopRouter);
 app.use("/movie/movielist", movieListRouter);
-app.use("/movie/movie-counter", movieCounterRouter);
+app.use("/movie/movie-counter", movieCountRouter);
 app.use("/movie/movietable", movieTableRouter);
+app.use("/movie/create-movie", createMovieRouter);
+app.use("/movie/update-movie", updateMovieRouter);
 
 // Serie use
 app.use("/serie/serielist", serieListRouter);
 app.use("/serie/serietable", serieTableRouter);
+app.use("/serie/create-serie", createSerieRouter);
+app.use("/serie/update-serie", updateSerieRouter);
 
 // Subscription use
 app.use("/subscription/update-subscription", subscriptionUpdateRouter);
@@ -92,6 +102,8 @@ app.use("/watchlist/update-watchlist", watchlistUpdateRouter);
 
 // Genre use
 app.use("/genre/genrelist", genreListRouter);
+app.use("/genre/create-genre", createGenreRouter);
+app.use("/genre/update-genre", updateGenreRouter);
 
 // Finance use
 app.use("/finance/daily-income", dailyIncomeRouter);

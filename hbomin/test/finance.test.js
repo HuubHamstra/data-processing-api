@@ -30,9 +30,10 @@ describe('GET /finance/daily-income?date=2024-01-21T14:55:40.483Z', () => {
       .set('authorization', `Bearer ${authToken}`);
 
 
-    expect(response.status).toBe(500);
-    expect(response.body).toHaveProperty('error');
-    expect(response.body.error).toBe('Invalid or missing daily income value');
+    expect(response.status).toBe(200);
+    expect(response.body).toHaveProperty('dailyIncome');
+    expect(typeof response.body.dailyIncome).toBe('number');
+    expect(response.body.dailyIncome).toBe(0);
   });
 
   // Send request without token

@@ -20,9 +20,9 @@ router.get('/', authenticateToken, async (req, res) => {
     else {
       const dailyIncome = results[0][0]["SUM(subscription.subscription_price)"];
       if (validator.isNumber(dailyIncome)) {
-        res.send({ dailyIncome });
+        res.status(200).send({ dailyIncome });
       } else {
-        res.status(500).send({ error: 'Invalid or missing daily income value' });
+        res.status(200).send({ dailyIncome: 0 });
       }
     }
 

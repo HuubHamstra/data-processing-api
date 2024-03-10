@@ -2,9 +2,10 @@ const express = require('express');
 const router = express.Router();
 const validator = require('../validator');
 const query = require('../../query');
+const authenticateToken = require('./authenticateToken');
 
 // Handle POST request for creating a series
-router.post('/', async (req, res) => {
+router.post('/', authenticateToken, async (req, res) => {
   const { name, description, genreId } = req.body;
 
   if (!name || !description || !genreId) {

@@ -2,9 +2,10 @@ const express = require('express');
 const router = express.Router();
 const validator = require('../validator');
 const query = require('../../query');
+const authenticateToken = require('./authenticateToken');
 
 // Handle POST request for creating a movie
-router.post('/', async (req, res) => {
+router.post('/', authenticateToken, async (req, res) => {
 
   if (!req.body.title || !req.body.duration || !req.body.description || !req.body.definitionTypeId || !req.body.genreId) {
     return res.status(400).send({ error: 'Missing required fields' });

@@ -2,9 +2,10 @@ const express = require('express');
 const router = express.Router();
 const query = require('../../query');
 const validator = require('../validator');
+const authenticateToken = require('./authenticateToken');
 
 // Handle POST request for updating a movie
-router.post('/', async (req, res) => {
+router.post('/', authenticateToken, async (req, res) => {
   if (!validator.bodyValidation(req, res)) {
     return;
   }

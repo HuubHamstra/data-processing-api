@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const validator = require('../validator');
 const query = require('../../query');
-const authenticateToken = require('./authenticateToken');
+const authenticateToken = require('../authenticateToken');
 
 // Handle POST request for creating a series
 router.post('/', authenticateToken, async (req, res) => {

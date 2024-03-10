@@ -20,7 +20,7 @@ describe('GET /users', () => {
     expect(response.body.error).toBe('Unauthorized');
   });
 
-  it('Respons with a 403 unknow / forbidden token', async () => {
+  it('Respons with a 403 unknown / forbidden token', async () => {
     const response = await request(app)
       .get('/users')
       .set('authorization', `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6ImR1bW15X3VzZXIiLCJwYXNzd29yZCI6InRlc3QxMjM0IiwiaWF0IjoxNjQ3NjQ0ODg2LCJleHAiOjE2NDc2NDg0ODZ9.VANXb8hjazOCvyC-C6YReHtrKqH5C06RY5VusWnJXfI`);

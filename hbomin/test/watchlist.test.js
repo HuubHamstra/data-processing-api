@@ -10,10 +10,15 @@ describe('GET /watchlist/get-watchlist', () => {
     expect(response.body).toHaveProperty('results');
     expect(response.body.results).toBeInstanceOf(Array);
   });
-});
 
+  it('Responds with status code 200 in xml format', async () => {
+    const response = await request(app).get('/watchlist/get-watchlist?profileId=57')
+      .set('accept', 'application/xml');
 
-describe('GET /watchlist/get-watchlist', () => {
+      expect(response.status).toBe(200);
+      expect(response.headers['content-type']).toMatch('application/xml')
+  });
+
   it('Handles invalid data', async () => {
 
     const response = await request(app).get('/watchlist/get-watchlist?profileId=invalidData');
